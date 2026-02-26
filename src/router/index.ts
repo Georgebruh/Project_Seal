@@ -20,6 +20,12 @@ const router = createRouter({
           path: 'client',
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
+        },
+        // NEW ROUTE ADDED HERE
+        {
+          path: 'create-seal',
+          name: 'create-seal',
+          component: () => import('@/views/CreateSealView.vue')
         }
       ]
     }
