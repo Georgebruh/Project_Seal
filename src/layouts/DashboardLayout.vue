@@ -51,11 +51,11 @@ const navigation = computed(() => {
             </svg>
             <span class="font-medium text-sm">{{ item.name }}</span>
           </RouterLink>
-
-          <button v-if="authStore.activeRole === 'freelancer'" class="w-full mt-4 flex items-center justify-center px-4 py-2 bg-seal-teal text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium shadow-sm">
-            <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Make New Seal
-          </button>
+    
+         <RouterLink v-if="authStore.activeRole === 'freelancer'" to="/create-seal" class="w-full mt-4 flex items-center justify-center px-4 py-2 bg-seal-teal text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium shadow-sm">
+          <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+             Make New Seal
+          </RouterLink>
         </nav>
 
         <div class="p-4 border-t border-gray-200 bg-gray-50 shrink-0">
