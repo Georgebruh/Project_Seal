@@ -4,11 +4,8 @@ import { RouterView, RouterLink } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
-
-// State for collapsing the sidebar
 const isSidebarCollapsed = ref(false)
 
-// Dynamic navigation links based on the active role
 const navigation = computed(() => {
   if (authStore.activeRole === 'freelancer') {
     return [
@@ -38,9 +35,7 @@ const navigation = computed(() => {
       ]"
     >
       <div class="w-64 flex flex-col h-full">
-        <div class="h-16 flex items-center px-6 border-b border-gray-200 shrink-0">
-          <h1 class="text-2xl font-bold text-seal-teal tracking-tight">seal</h1>
-        </div>
+        <div class="h-16 flex items-center px-6 border-b border-gray-200 shrink-0"></div>
 
         <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Tools</p>
@@ -86,7 +81,27 @@ const navigation = computed(() => {
 
     <div class="flex-1 flex flex-col overflow-hidden relative">
       
-      <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 shrink-0 z-10">
+      <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
+        
+        <div class="flex items-center space-x-4">
+          
+          <button 
+            @click="isSidebarCollapsed = !isSidebarCollapsed" 
+            class="p-2 bg-white border border-gray-200 shadow-sm rounded-lg text-gray-500 hover:text-seal-teal transition-all focus:outline-none flex items-center justify-center hover:shadow"
+            :title="isSidebarCollapsed ? 'Open Sidebar' : 'Close Sidebar'"
+          >
+            <svg class="w-5 h-5 transition-transform duration-300" :class="!isSidebarCollapsed ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+
+          <RouterLink to="/" class="h-10 flex items-center hover:opacity-80 transition-opacity">
+            <img src="@/assets/TopBarLogo.svg" alt="Seal Logo" class="h-full w-auto object-contain" />
+          </RouterLink>
+
+        </div>
+
         <div class="flex items-center space-x-5">
           <button class="relative text-gray-400 hover:text-gray-600 transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
@@ -109,21 +124,7 @@ const navigation = computed(() => {
       </header>
 
       <div class="flex-1 overflow-hidden relative flex flex-col">
-        
-        <div class="absolute top-6 left-8 z-50">
-          <button 
-            @click="isSidebarCollapsed = !isSidebarCollapsed" 
-            class="p-2.5 bg-white border border-gray-200 shadow-sm rounded-lg text-gray-500 hover:text-seal-teal transition-all focus:outline-none flex items-center justify-center hover:shadow"
-            :title="isSidebarCollapsed ? 'Open Sidebar' : 'Close Sidebar'"
-          >
-            <svg class="w-5 h-5 transition-transform duration-300" :class="!isSidebarCollapsed ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path v-if="isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-
-        <main class="flex-1 overflow-y-auto p-8 pt-20">
+        <main class="flex-1 overflow-y-auto p-8">
           <RouterView />
         </main>
       </div>
