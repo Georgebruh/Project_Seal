@@ -5,7 +5,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/freelancer' // Redirect root to dashboard for now
+      redirect: '/freelancer'
     },
     {
       path: '/',
@@ -21,11 +21,16 @@ const router = createRouter({
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
         },
-        // NEW ROUTE ADDED HERE
         {
           path: 'create-seal',
           name: 'create-seal',
           component: () => import('@/views/CreateSealView.vue')
+        },
+        // NEW ROUTE ADDED HERE
+        {
+          path: 'seal/:id',
+          name: 'seal-detail',
+          component: () => import('@/views/SealDetailView.vue')
         }
       ]
     }
