@@ -7,6 +7,13 @@ const router = createRouter({
       path: '/',
       redirect: '/freelancer'
     },
+
+    {
+      path: '/pay/:id',
+      name: 'secure-checkout',
+      component: () => import('@/views/TransactionCheckoutView.vue')
+    },
+    // Application Dashboard
     {
       path: '/',
       component: () => import('@/layouts/DashboardLayout.vue'),
@@ -26,7 +33,6 @@ const router = createRouter({
           name: 'create-seal',
           component: () => import('@/views/CreateSealView.vue')
         },
-        // NEW ROUTE ADDED HERE
         {
           path: 'seal/:id',
           name: 'seal-detail',
