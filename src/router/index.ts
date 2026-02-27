@@ -6,8 +6,19 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+<<<<<<< HEAD
       redirect: '/login' // Send users to the login screen first
+=======
+      redirect: '/freelancer'
+>>>>>>> 8dbbb95ee4739b8cd2192e3d4d081bc91dabccfa
     },
+
+    {
+      path: '/pay/:id',
+      name: 'secure-checkout',
+      component: () => import('@/views/TransactionCheckoutView.vue')
+    },
+    // Application Dashboard
     {
       path: '/login',
       name: 'login',
@@ -26,6 +37,16 @@ const router = createRouter({
           path: '/client',
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
+        },
+        {
+          path: 'create-seal',
+          name: 'create-seal',
+          component: () => import('@/views/CreateSealView.vue')
+        },
+        {
+          path: 'seal/:id',
+          name: 'seal-detail',
+          component: () => import('@/views/SealDetailView.vue')
         }
       ]
     }
