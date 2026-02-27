@@ -6,23 +6,17 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-<<<<<<< HEAD
-      redirect: '/login' // Send users to the login screen first
-=======
-      redirect: '/freelancer'
->>>>>>> 8dbbb95ee4739b8cd2192e3d4d081bc91dabccfa
+      redirect: '/login' // Your change: Send users to the login screen first
     },
-
     {
       path: '/pay/:id',
       name: 'secure-checkout',
-      component: () => import('@/views/TransactionCheckoutView.vue')
+      component: () => import('@/views/TransactionCheckoutView.vue') // Teammate's change: Kept intact
     },
-    // Application Dashboard
     {
       path: '/login',
       name: 'login',
-      component: LoginView // Registers your new UI
+      component: LoginView // Your new UI
     },
     {
       path: '/dashboard', 
@@ -41,12 +35,12 @@ const router = createRouter({
         {
           path: 'create-seal',
           name: 'create-seal',
-          component: () => import('@/views/CreateSealView.vue')
+          component: () => import('@/views/CreateSealView.vue') // Teammate's change: Kept intact
         },
         {
           path: 'seal/:id',
           name: 'seal-detail',
-          component: () => import('@/views/SealDetailView.vue')
+          component: () => import('@/views/SealDetailView.vue') // Teammate's change: Kept intact
         }
       ]
     }
