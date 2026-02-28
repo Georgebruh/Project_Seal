@@ -6,7 +6,7 @@ export const useAuthStore = defineStore('auth', () => {
   
   // Mock user data
   const user = ref({
-    name: 'DexterBAyot Kristan Señagan',
+    name: 'George',
     email: 'george@projectseal.com',
     avatar: 'https://via.placeholder.com/40'
   })
