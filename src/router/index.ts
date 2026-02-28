@@ -27,6 +27,11 @@ const router = createRouter({
           name: 'freelancer-dashboard',
           component: () => import('@/views/FreelancerDashboard.vue')
         },
+      {
+          path: 'analytics',
+          name: 'analytics',
+          component: () => import('@/views/AnalyticsView.vue')
+        },
         {
           path: '/client',
           name: 'client-dashboard',
