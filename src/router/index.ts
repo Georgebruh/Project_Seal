@@ -1,11 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import LoginView from '@/views/LoginView.vue' // <-- ADD THIS BACK
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login', // <-- ADD THIS BACK
+      name: 'login',
+      component: LoginView 
+    },
+    {
       path: '/',
-      redirect: '/freelancer'
+      redirect: '/login' // <-- SEND USERS TO LOGIN FIRST
     },
     {
       path: '/pay/:id',
@@ -13,16 +19,21 @@ const router = createRouter({
       component: () => import('@/views/TransactionCheckoutView.vue')
     },
     {
-      path: '/',
+      path: '/dashboard', 
       component: () => import('@/layouts/DashboardLayout.vue'),
       children: [
         {
-          path: 'freelancer',
+          path: '/freelancer',
           name: 'freelancer-dashboard',
           component: () => import('@/views/FreelancerDashboard.vue')
         },
         {
-          path: 'client',
+          path: 'analytics',
+          name: 'analytics',
+          component: () => import('@/views/AnalyticsView.vue')
+        },
+        {
+          path: '/client',
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
         },
@@ -37,7 +48,7 @@ const router = createRouter({
           component: () => import('@/views/SealDetailView.vue')
         },
         {
-          path: 'notifications',
+          path: 'notifications', 
           name: 'notifications',
           component: () => import('@/views/NotificationsView.vue')
         },
