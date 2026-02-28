@@ -21,11 +21,6 @@ const router = createRouter({
           name: 'freelancer-dashboard',
           component: () => import('@/views/FreelancerDashboard.vue')
         },
-      {
-          path: 'analytics',
-          name: 'analytics',
-          component: () => import('@/views/AnalyticsView.vue')
-        },
         {
           path: 'client',
           name: 'client-dashboard',
@@ -41,11 +36,15 @@ const router = createRouter({
           name: 'seal-detail',
           component: () => import('@/views/SealDetailView.vue')
         },
-        
         {
           path: 'notifications',
           name: 'notifications',
           component: () => import('@/views/NotificationsView.vue')
+        },
+        {
+          path: 'history',
+          name: 'history',
+          component: () => import('@/views/HistoryView.vue')
         }
       ]
     }
