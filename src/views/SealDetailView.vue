@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 const sealId = route.params.id as string
 
 const isLoading = ref(true)
+const isProcessingPayment = ref(false) // NEW: Added for payment loading state
 const seal = ref<any>(null)
 const freelancerName = ref('Loading...')
 const clientName = ref('Awaiting Client')
@@ -78,7 +79,6 @@ interface StatusInfo {
 
 const statusInfo = computed<StatusInfo>(() => {
   if (!seal.value) {
-    // return a default to satisfy typing, though the template guards with v-if
     return { label: '', color: '', icon: '', progress: '' }
   }
   
@@ -119,14 +119,11 @@ const statusInfo = computed<StatusInfo>(() => {
   return result as StatusInfo
 })
 
-// Calculate deposit based on the percentage set in the database (default 100%)
 const depositAmount = computed(() => {
   if (!seal.value) return 0
   const percentage = seal.value.deposit_percentage || 100
   return seal.value.total_amount * (percentage / 100)
 })
-
-// --- DATABASE ACTIONS ---
 
 const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) => {
   try {
@@ -137,11 +134,8 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
 
     if (error) throw error
     
-    // Update local state so UI reacts instantly
     seal.value.status = newStatus
     if (additionalUpdates.client_id) seal.value.client_id = additionalUpdates.client_id
-    
-    // Refresh names just in case
     if (additionalUpdates.client_id) await fetchSealDetails()
     
   } catch (error) {
@@ -150,15 +144,35 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
   }
 }
 
-// Client Actions
 const clientAcceptContract = async () => {
-  // Binds the currently logged-in user as the client and moves to funding
   await updateSealStatus('Awaiting funding', { client_id: authStore.user.id })
 }
 
+// NEW: Updated to call the Edge Function instead of showing an alert
 const clientFundEscrow = async () => {
-  alert(`In a future update, this will open the payment gateway for ₱${depositAmount.value.toLocaleString()}.`)
-  await updateSealStatus('In progress')
+  try {
+    isProcessingPayment.value = true
+    
+    const { data, error } = await supabase.functions.invoke('create-paymongo-checkout', {
+      body: { 
+        amount: depositAmount.value, 
+        description: `Escrow Deposit for ${seal.value.project_name}`,
+        successUrl: `${window.location.origin}/payment-success?seal_id=${seal.value.id}`,
+        cancelUrl: window.location.href 
+      }
+    })
+
+    if (error) throw error
+    if (data && data.checkoutUrl) {
+      window.location.href = data.checkoutUrl
+    } else {
+      throw new Error("No checkout URL returned")
+    }
+  } catch (error) {
+    console.error('Payment initialization failed:', error)
+    alert('Failed to connect to payment gateway. Please try again.')
+    isProcessingPayment.value = false
+  }
 }
 
 const clientApproveWork = async () => {
@@ -167,7 +181,6 @@ const clientApproveWork = async () => {
   }
 }
 
-// Freelancer Actions
 const freelancerCancel = async () => {
   if(confirm('Are you sure you want to cancel this seal?')) {
     await updateSealStatus('Cancelled')
@@ -257,8 +270,13 @@ const freelancerCancel = async () => {
                   <span class="text-lg text-seal-teal">₱{{ depositAmount.toLocaleString() }}</span>
                 </div>
               </div>
-              <button @click="clientFundEscrow" class="w-full py-3.5 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold shadow-sm transition-colors">
-                Deposit to Secure Escrow
+              <button 
+                @click="clientFundEscrow" 
+                :disabled="isProcessingPayment"
+                class="w-full py-3.5 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold shadow-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
+              >
+                <svg v-if="isProcessingPayment" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                {{ isProcessingPayment ? 'Connecting to PayMongo...' : 'Deposit to Secure Escrow' }}
               </button>
             </div>
 
