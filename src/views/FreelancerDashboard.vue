@@ -1,40 +1,155 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { getFreelancerMetrics, getFreelancerSeals, type SealData } from '@/services/dashboardService'
+import { supabase } from '@/supabase'
+import { getFreelancerMetrics } from '@/services/dashboardService'
 
-const authStore = useAuthStore()
 const router = useRouter()
 
 // State management
 const isLoading = ref(true)
+const freelancerName = ref('Freelancer')
 
-// Empty data containers waiting to be filled
-const earningsData = ref({ amount: '', trend: '', completedThisMonth: 0 })
+// Real reactive data containers
+const earningsData = ref({ amount: '₱0', trend: 'Updated', completedThisMonth: 0 })
 const activeProjectsData = ref({ total: 0, nearDeadline: [] as any[] })
 const transactionsData = ref([] as any[])
-const activeSealsList = ref<SealData[]>([])
+
+// Real Seals Data
+const activeSealsList = ref<any[]>([])
+
+// Helper function to match your UI colors
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Pending review': return 'bg-amber-100 text-amber-700'
+    case 'Awaiting funding': return 'bg-blue-100 text-blue-700'
+    case 'In progress': return 'bg-indigo-100 text-indigo-700'
+    default: return 'bg-gray-100 text-gray-700'
+  }
+}
 
 // Fetch data when the component loads
 onMounted(async () => {
   try {
-    // Fire both "API" calls at the same time
-    const [metrics, seals] = await Promise.all([
-      getFreelancerMetrics(),
-      getFreelancerSeals()
-    ])
+    isLoading.value = true
+
+    // 1. Get the securely authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     
-    // Assign the fetched data to our Vue refs
-    earningsData.value = metrics.earnings
-    activeProjectsData.value = metrics.projects
+    if (userError || !user) throw new Error('User not authenticated')
+
+    // 2. Fetch Profile, Active Seals, and Completed Seals concurrently
+    const [profileRes, activeSealsRes, completedSealsRes, metrics] = await Promise.all([
+      supabase
+        .from('Profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single(),
+      
+      // Fetch Active Seals (added end_date for deadline calculation)
+      supabase
+        .from('Seals')
+        .select('id, project_name, project_type, start_date, end_date, total_amount, status')
+        .eq('freelancer_id', user.id)
+        .neq('status', 'Completed') 
+        .neq('status', 'Cancelled')
+        .order('created_at', { ascending: false }),
+
+      // Fetch Completed Seals (for Total Earnings calculation)
+      supabase
+        .from('Seals')
+        .select('total_amount, end_date')
+        .eq('freelancer_id', user.id)
+        .eq('status', 'Completed'),
+        
+      getFreelancerMetrics() // Keeping for the mock transactions
+    ])
+
+    // --- HANDLE PROFILE NAME ---
+    if (profileRes.data && profileRes.data.full_name) {
+      freelancerName.value = profileRes.data.full_name.split(' ')[0]
+    }
+
+    // --- SETUP DATES FOR CALCULATIONS ---
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const threeDaysFromNow = new Date(today)
+    threeDaysFromNow.setDate(today.getDate() + 3)
+    
+    const currentMonth = today.getMonth()
+    const currentYear = today.getFullYear()
+
+    // --- PROCESS ACTIVE SEALS & DEADLINES ---
+    if (activeSealsRes.data) {
+      const nearDeadlineList: any[] = []
+
+      activeSealsList.value = activeSealsRes.data.map(seal => {
+        // Calculate Deadlines
+        if (seal.end_date) {
+          const endDate = new Date(seal.end_date)
+          endDate.setHours(0, 0, 0, 0)
+          
+          if (endDate >= today && endDate <= threeDaysFromNow) {
+            nearDeadlineList.push({
+              id: seal.id,
+              name: seal.project_name,
+              date: endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            })
+          }
+        }
+
+        // Map data for the UI list
+        return {
+          id: seal.id,
+          title: seal.project_name,
+          subtitle: seal.project_type || 'General Project',
+          date: new Date(seal.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          amount: `₱${seal.total_amount.toLocaleString()}`,
+          status: seal.status,
+          statusBg: getStatusColor(seal.status)
+        }
+      })
+
+      // Update the Active Projects metrics box
+      activeProjectsData.value = {
+        total: activeSealsRes.data.length,
+        nearDeadline: nearDeadlineList
+      }
+    }
+
+    // --- PROCESS COMPLETED SEALS (EARNINGS) ---
+    if (completedSealsRes.data) {
+      let totalEarnings = 0
+      let completedThisMonthCount = 0
+
+      completedSealsRes.data.forEach(seal => {
+        totalEarnings += Number(seal.total_amount || 0)
+        
+        // Count if completed this month based on the end_date
+        if (seal.end_date) {
+          const endDate = new Date(seal.end_date)
+          if (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear) {
+            completedThisMonthCount++
+          }
+        }
+      })
+
+      // Update the Earnings metrics box
+      earningsData.value = {
+        amount: `₱${totalEarnings.toLocaleString()}`,
+        trend: 'Up to date',
+        completedThisMonth: completedThisMonthCount
+      }
+    }
+
+    // Assign mock transaction data (until you build out the Transactions table)
     transactionsData.value = metrics.transactions
-    activeSealsList.value = seals
     
   } catch (error) {
     console.error("Failed to load dashboard data:", error)
   } finally {
-    isLoading.value = false // Turn off the loading state once finished
+    isLoading.value = false 
   }
 })
 </script>
@@ -44,7 +159,7 @@ onMounted(async () => {
     
     <div class="mb-8">
       <h2 class="text-3xl font-bold text-gray-900 tracking-tight">
-        Welcome Back, {{ authStore.user?.name ? authStore.user.name.split(' ')[0] : 'Freelancer' }}!
+        Welcome Back, {{ freelancerName }}!
       </h2>
       <p class="text-gray-500 mt-1">Here's what's happening with your projects today.</p>
     </div>
@@ -140,7 +255,18 @@ onMounted(async () => {
         <button @click="router.push('/my-seals')" class="text-sm font-semibold text-seal-teal hover:underline">View All</button>
       </div>
       
-      <div class="divide-y divide-gray-50">
+      <div v-if="isLoading" class="p-6 text-center text-gray-500 text-sm">
+        Loading your active seals...
+      </div>
+
+      <div v-else-if="activeSealsList.length === 0" class="p-8 text-center">
+        <p class="text-gray-500 text-sm mb-4">You don't have any active seals right now.</p>
+        <button @click="router.push('/create-seal')" class="bg-seal-teal text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-600 transition-colors">
+          Create a New Seal
+        </button>
+      </div>
+
+      <div v-else class="divide-y divide-gray-50">
         <div v-for="seal in activeSealsList" :key="seal.id" class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer" @click="router.push({ name: 'seal-detail', params: { id: seal.id } })">
           
           <div class="w-1/3">
