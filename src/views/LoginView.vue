@@ -17,16 +17,16 @@ const handleSendOTP = async () => {
   
   if (phoneNumber.value.length >= 10) {
     try {
-      // 1. Check if phone exists in the Profiles table first
-      const exists = await authStore.checkPhoneExists(phoneNumber.value)
+      // 1. Check if phone exists in the Profiles table and get the email
+      const email = await authStore.checkPhoneExistsAndGetEmail(phoneNumber.value)
       
-      if (!exists) {
-        errorMessage.value = "Phone number is not registered."
+      if (!email) {
+        errorMessage.value = "Phone number is not registered or missing email."
         return
       }
 
-      // 2. Trigger SMS OTP via Twilio/Supabase (auth.ts handles E.164 formatting now)
-      await authStore.sendPhoneOtp(phoneNumber.value)
+      // 2. Trigger Email OTP 
+      await authStore.sendEmailOtp(email)
       step.value = 2 // Advance to OTP screen
       
     } catch (error: any) {
@@ -43,8 +43,8 @@ const handleVerifyOTP = async () => {
   
   if (code.length === 6) {
     try {
-      // 3. Verify the OTP entered by the user
-      await authStore.verifyPhoneOtp(phoneNumber.value, code)
+      // 3. Verify the OTP entered by the user using the new email function
+      await authStore.verifyEmailOtp(code)
       
       // 4. Redirect to Client Dashboard on success
       router.push('/client')
@@ -105,7 +105,7 @@ const onOtpKeydown = (index: number, event: KeyboardEvent) => {
         </div>
 
         <div v-if="step === 2" class="step-container">
-          <p class="subtitle">Enter the 6-digit code sent to your phone</p>
+          <p class="subtitle">Enter the 6-digit code sent to your email</p>
           
           <div class="input-section">
             <label>One-Time Password</label>

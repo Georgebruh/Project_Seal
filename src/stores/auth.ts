@@ -25,21 +25,12 @@ import { supabase } from '@/supabase'
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
   const isAuthenticated = ref(false)
+  
+  // Keep track of the retrieved email to use during the verify step
+  const currentEmail = ref<string>('')
 
-  // --- Helper to normalize phone numbers ---
-  // Twilio requires E.164 format (+639xxxxxxxxx). This converts local 09... to +63...
-  const formatToE164 = (phone: string) => {
-    let p = phone.replace(/\D/g, '') // Strip non-numeric
-    if (p.startsWith('0')) {
-      p = '63' + p.substring(1) // Convert 09... to 639...
-    } else if (p.length === 10) {
-      p = '63' + p // Assume it's 9xxxxxxxxx and prepend 63
-    }
-    return '+' + p // e.g., +639664714567
-  }
-
-// 1. Check if the user's phone number exists in the Profiles table.
-  const checkPhoneExists = async (phone: string) => {
+  // 1. Check if the user's phone number exists in the Profiles table and GET the email.
+  const checkPhoneExistsAndGetEmail = async (phone: string) => {
     // Strip everything except numbers
     const numericPhone = phone.replace(/\D/g, '')
     
@@ -53,41 +44,42 @@ export const useAuthStore = defineStore('auth', () => {
 
     const { data, error } = await supabase
       .from('Profiles')
-      .select('id')
+      .select('id, email') // REQUIRED: You must have an 'email' column in your Profiles table
       .eq('phone_number', dbPhoneMatch)
       .maybeSingle() 
 
     if (error) {
       console.error('DEBUG: Supabase error:', error)
-      return false
+      return null
     }
 
     console.log("DEBUG: Database returned ->", data)
 
-    // Returns true if profile data exists, false if null
-    return !!data 
+    // Return the email if profile data exists and has an email attached
+    if (data && data.email) {
+      currentEmail.value = data.email
+      return data.email
+    }
+    
+    return null 
   }
 
-  // 2. Trigger SMS OTP via Supabase (which uses Twilio under the hood)
-  const sendPhoneOtp = async (phone: string) => {
-    const formattedPhone = formatToE164(phone) // Ensure +63 format for Twilio
-
+  // 2. Trigger Email OTP via Supabase
+  const sendEmailOtp = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({
-      phone: formattedPhone,
+      email: email, // Sending to the email we retrieved from the DB
     })
 
     if (error) throw error
     return data
   }
 
-  // 3. Verify the OTP token entered by the user
-  const verifyPhoneOtp = async (phone: string, token: string) => {
-    const formattedPhone = formatToE164(phone) // Match the exact format we used to send
-
+  // 3. Verify the Email OTP token entered by the user
+  const verifyEmailOtp = async (token: string) => {
     const { data, error } = await supabase.auth.verifyOtp({
-      phone: formattedPhone,
+      email: currentEmail.value, // Verify against the email we stored in state
       token,
-      type: 'sms'
+      type: 'email' // Changed from 'sms' to 'email'
     })
 
     if (error) throw error
@@ -109,9 +101,10 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     isAuthenticated,
-    checkPhoneExists,
-    sendPhoneOtp,
-    verifyPhoneOtp,
+    currentEmail,
+    checkPhoneExistsAndGetEmail,
+    sendEmailOtp,
+    verifyEmailOtp,
     logout
   }
 })
