@@ -1,77 +1,95 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { supabase } from '@/supabase'
 
 const router = useRouter()
 const isLoading = ref(true)
 const searchQuery = ref('')
 
-// Mock Data for active/pending projects
-const activeSeals = ref<any[]>([])
+// Real Data container
+const allSeals = ref<any[]>([])
 
-onMounted(() => {
-  // Simulate fetching active seals from Supabase
-  setTimeout(() => {
-    activeSeals.value = [
-      { 
-        id: '105', 
-        displayId: 'SEAL-105',
-        title: 'Mobile App UI Setup', 
-        client: 'TechStart Inc.', 
-        amount: 25000, 
-        status: 'in_progress', 
-        nextMilestone: 'Submit Wireframes (Feb 26)' 
-      },
-      { 
-        id: '108', 
-        displayId: 'SEAL-108',
-        title: 'Website Redesign', 
-        client: 'Acme Corp', 
-        amount: 45000, 
-        status: 'awaiting_deposit', 
-        nextMilestone: 'Waiting for Client Funds' 
-      },
-      { 
-        id: '102', 
-        displayId: 'SEAL-102',
-        title: 'Logo Design & Branding', 
-        client: 'Sarah Designs', 
-        amount: 8500, 
-        status: 'in_review', 
-        nextMilestone: 'Awaiting Client Approval' 
-      }
-    ]
+onMounted(async () => {
+  try {
+    isLoading.value = true
+    
+    // 1. Get authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) throw new Error('User not authenticated')
+
+    // 2. Fetch all seals for this user (Completed or Not)
+    const { data: sealsData, error: sealsError } = await supabase
+      .from('Seals')
+      .select('*')
+      .eq('freelancer_id', user.id)
+      .order('created_at', { ascending: false })
+
+    if (sealsError) throw sealsError
+
+    // 3. Map the database data to your UI structure
+    if (sealsData) {
+      allSeals.value = sealsData.map(seal => {
+        
+        // Generate a clean Display ID from the UUID (e.g., SEAL-a1b2c3d4)
+        const shortId = seal.id.substring(0, 8).toUpperCase()
+        
+        return { 
+          id: seal.id, 
+          displayId: `SEAL-${shortId}`,
+          title: seal.project_name, 
+          // Use the new client_name column for tracking
+          client: seal.client_id 
+             ? (seal.client_name || 'Client Assigned') 
+             : `Awaiting: ${seal.client_name || 'Client'}`, 
+          amount: seal.total_amount, 
+          status: seal.status, 
+          nextMilestone: getMilestoneMessage(seal.status)
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching seals:', error)
+  } finally {
     isLoading.value = false
-  }, 600)
+  }
 })
 
+// Search filter logic
 const filteredSeals = computed(() => {
-  if (!searchQuery.value) return activeSeals.value
-  return activeSeals.value.filter(seal => 
+  if (!searchQuery.value) return allSeals.value
+  return allSeals.value.filter(seal => 
     seal.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-    seal.client.toLowerCase().includes(searchQuery.value.toLowerCase())
+    seal.client.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    seal.displayId.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
 const formatCurrency = (amount: number) => {
-  return `₱${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+  return `₱${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
 }
 
+// Map the real database statuses to your UI colors
 const getStatusStyles = (status: string) => {
   switch(status) {
-    case 'in_progress': return 'bg-blue-50 text-blue-700 border-blue-200'
-    case 'awaiting_deposit': return 'bg-orange-50 text-orange-700 border-orange-200'
-    case 'in_review': return 'bg-purple-50 text-purple-700 border-purple-200'
+    case 'Pending review': return 'bg-amber-50 text-amber-700 border-amber-200'
+    case 'Awaiting funding': return 'bg-blue-50 text-blue-700 border-blue-200'
+    case 'In progress': return 'bg-indigo-50 text-indigo-700 border-indigo-200'
+    case 'Completed': return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    case 'Cancelled': return 'bg-red-50 text-red-700 border-red-200'
     default: return 'bg-gray-50 text-gray-700 border-gray-200'
   }
 }
 
-const getStatusLabel = (status: string) => {
+// Generate a helpful subtitle based on the status
+const getMilestoneMessage = (status: string) => {
   switch(status) {
-    case 'in_progress': return 'In Progress'
-    case 'awaiting_deposit': return 'Awaiting Deposit'
-    case 'in_review': return 'In Review'
-    default: return status
+    case 'Pending review': return 'Waiting for Client to Accept'
+    case 'Awaiting funding': return 'Waiting for Client Escrow Deposit'
+    case 'In progress': return 'Work Ongoing'
+    case 'Completed': return 'Funds Released'
+    case 'Cancelled': return 'Project Voided'
+    default: return 'Pending Update'
   }
 }
 </script>
@@ -101,7 +119,7 @@ const getStatusLabel = (status: string) => {
       <input 
         v-model="searchQuery"
         type="text" 
-        placeholder="Search active projects..." 
+        placeholder="Search projects by name or ID..." 
         class="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-seal-teal/50 focus:border-seal-teal transition-all shadow-sm text-sm"
       />
     </div>
@@ -119,7 +137,7 @@ const getStatusLabel = (status: string) => {
         <div class="p-6 flex-1">
           <div class="flex justify-between items-start mb-4">
             <span :class="['px-2.5 py-1 text-xs font-bold rounded-md border', getStatusStyles(seal.status)]">
-              {{ getStatusLabel(seal.status) }}
+              {{ seal.status }}
             </span>
             <span class="text-xs text-gray-400 font-mono font-medium">{{ seal.displayId }}</span>
           </div>
