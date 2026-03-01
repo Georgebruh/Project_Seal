@@ -17,7 +17,7 @@ const handleSendOTP = () => {
 const handleVerifyOTP = () => {
   const code = otpDigits.value.join('')
   if (code.length === 6) {
-    router.push('/freelancer')
+    router.push('/dashboard/freelancer')
   }
 }
 
