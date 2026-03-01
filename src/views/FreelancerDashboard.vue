@@ -44,7 +44,7 @@ onMounted(async () => {
     
     <div class="mb-8">
       <h2 class="text-3xl font-bold text-gray-900 tracking-tight">
-        Welcome Back, {{ authStore.user.name.split(' ')[0] }}!
+        Welcome Back, {{ authStore.user?.name ? authStore.user.name.split(' ')[0] : 'Freelancer' }}!
       </h2>
       <p class="text-gray-500 mt-1">Here's what's happening with your projects today.</p>
     </div>
@@ -52,7 +52,7 @@ onMounted(async () => {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       
       <div 
-        @click="router.push('/analytics')" 
+        @click="router.push({ name: 'analytics' })" 
         class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:border-seal-teal hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-52"
       >
         <div class="flex justify-between items-start">
@@ -73,14 +73,14 @@ onMounted(async () => {
       </div>
 
       <div 
-        @click="router.push('/my-seals')" 
+        @click="router.push({ name: 'my-seals' })" 
         class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:border-seal-teal hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-52"
       >
         <div class="flex justify-between items-start">
           <div>
             <p class="text-sm font-medium text-gray-500 mb-1">Active Seals</p>
             <h3 
-              @click.stop="router.push('/calendar')" 
+              @click.stop="router.push({ name: 'analytics' })" 
               class="text-2xl font-bold text-gray-900 hover:text-seal-teal transition-colors"
               title="View Calendar"
             >
@@ -96,7 +96,7 @@ onMounted(async () => {
           <div 
             v-for="seal in activeProjectsData.nearDeadline" 
             :key="seal.id"
-            @click.stop="router.push(`/seal/${seal.id}`)"
+            @click.stop="router.push({ name: 'seal-detail', params: { id: seal.id } })"
             class="flex justify-between items-center text-sm py-0.5 hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
           >
             <span class="font-medium text-gray-700 truncate mr-2">{{ seal.name }}</span>
@@ -106,7 +106,7 @@ onMounted(async () => {
       </div>
 
       <div 
-        @click="router.push('/history')" 
+        @click="router.push({ name: 'history' })" 
         class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:border-seal-teal hover:shadow-md transition-all cursor-pointer flex flex-col justify-between h-52"
       >
         <div class="flex justify-between items-start">
@@ -141,7 +141,7 @@ onMounted(async () => {
       </div>
       
       <div class="divide-y divide-gray-50">
-        <div v-for="seal in activeSealsList" :key="seal.id" class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer" @click="router.push(`/seal/${seal.id}`)">
+        <div v-for="seal in activeSealsList" :key="seal.id" class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer" @click="router.push({ name: 'seal-detail', params: { id: seal.id } })">
           
           <div class="w-1/3">
             <p class="font-bold text-gray-900">{{ seal.title }}</p>
