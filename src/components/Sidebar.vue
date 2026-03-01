@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
-// Accept the collapsed state from the parent layout
 const props = defineProps<{
   isCollapsed: boolean
 }>()
@@ -11,32 +10,32 @@ const props = defineProps<{
 const authStore = useAuthStore()
 const router = useRouter()
 
-// Dynamic navigation links completely tailored to the active role
+// BEST PRACTICE: Use 'routeName' for implemented features, fallback to 'href: #' for placeholders
 const navigation = computed(() => {
   if (authStore.activeRole === 'freelancer') {
     return [
-      { name: 'Dashboard', href: '/freelancer', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+      { name: 'Dashboard', routeName: 'freelancer-dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
       { name: 'My Seals', href: '#', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
-      { name: 'Analytics', href: '/dashboard/analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2h-2a2 2 0 01-2-2z' },
-      { name: 'History', href: '#', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+      { name: 'Analytics', routeName: 'analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012-2h-2a2 2 0 01-2-2z' },
+      { name: 'History', routeName: 'history', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     ]
   } else {
     // Client-specific tools
     return [
-      { name: 'Overview', href: '/client', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+      { name: 'Overview', routeName: 'client-dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
       { name: 'Active Hires', href: '#', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
       { name: 'Billing & Escrow', href: '#', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     ]
   }
 })
 
-// Properly route the user when they toggle their role
+// Push using Named Routes instead of hardcoded strings
 const handleRoleToggle = () => {
   authStore.toggleRole()
   if (authStore.activeRole === 'client') {
-    router.push('/client')
+    router.push({ name: 'client-dashboard' })
   } else {
-    router.push('/freelancer')
+    router.push({ name: 'freelancer-dashboard' })
   }
 }
 </script>
@@ -57,7 +56,7 @@ const handleRoleToggle = () => {
         <RouterLink 
           v-for="item in navigation" 
           :key="item.name" 
-          :to="item.href"
+          :to="item.routeName ? { name: item.routeName } : (item.href || '#')"
           class="flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-seal-teal transition-colors group"
         >
           <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-seal-teal shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,7 +65,7 @@ const handleRoleToggle = () => {
           <span class="font-medium text-sm">{{ item.name }}</span>
         </RouterLink>
   
-        <RouterLink v-if="authStore.activeRole === 'freelancer'" to="/create-seal" class="w-full mt-4 flex items-center justify-center px-4 py-2 bg-seal-teal text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium shadow-sm">
+        <RouterLink v-if="authStore.activeRole === 'freelancer'" :to="{ name: 'create-seal' }" class="w-full mt-4 flex items-center justify-center px-4 py-2 bg-seal-teal text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium shadow-sm">
           <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
            Make New Seal
         </RouterLink>
