@@ -46,8 +46,8 @@ const handleVerifyOTP = async () => {
       // 3. Verify the OTP entered by the user using the new email function
       await authStore.verifyEmailOtp(code)
       
-      // 4. Redirect to Client Dashboard on success
-      router.push('/client')
+      // 4. Redirect to Dashboard on success
+      router.push('/dashboard/freelancer')
       
     } catch (error: any) {
       errorMessage.value = error.message || "Invalid OTP code. Please try again."
@@ -311,7 +311,6 @@ label {
   align-items: center;
 }
 
-/* Added a small styling class for your error messages */
 .error-text {
   color: #d9534f;
   font-size: 12px;

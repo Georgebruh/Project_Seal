@@ -17,14 +17,15 @@ import { supabase } from '@/supabase'
 //   }
 
 //   return { activeRole, user, toggleRole }
-// })
-
-
-// -- Above is mock data. Below is real implementation for now -- 
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<any>(null)
   const isAuthenticated = ref(false)
+  const activeRole = ref<'freelancer' | 'client'>('freelancer')
+
+  function toggleRole() {
+    activeRole.value = activeRole.value === 'freelancer' ? 'client' : 'freelancer'
+  }
   
   // Keep track of the retrieved email to use during the verify step
   const currentEmail = ref<string>('')
@@ -101,6 +102,8 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     isAuthenticated,
+    activeRole,
+    toggleRole,
     currentEmail,
     checkPhoneExistsAndGetEmail,
     sendEmailOtp,

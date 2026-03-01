@@ -5,42 +5,63 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login', 
+      name: 'login',
+      component: LoginView 
+    },
+    {
       path: '/',
       redirect: '/login' 
     },
     {
       path: '/pay/:id',
       name: 'secure-checkout',
-      component: () => import('@/views/TransactionCheckoutView.vue') 
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginView 
+      component: () => import('@/views/TransactionCheckoutView.vue')
     },
     {
       path: '/dashboard', 
       component: () => import('@/layouts/DashboardLayout.vue'),
       children: [
         {
-          path: '/freelancer',
+          path: 'freelancer', 
           name: 'freelancer-dashboard',
           component: () => import('@/views/FreelancerDashboard.vue')
         },
         {
-          path: '/client',
+          path: 'my-seals',
+          name: 'my-seals',
+          component: () => import('@/views/MySealsView.vue')
+        },
+        
+        {
+          path: 'analytics',
+          name: 'analytics',
+          component: () => import('@/views/AnalyticsView.vue')
+        },
+        {
+          path: 'client', 
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
         },
         {
           path: 'create-seal',
           name: 'create-seal',
-          component: () => import('@/views/CreateSealView.vue') 
+          component: () => import('@/views/CreateSealView.vue')
         },
         {
           path: 'seal/:id',
           name: 'seal-detail',
-          component: () => import('@/views/SealDetailView.vue') 
+          component: () => import('@/views/SealDetailView.vue')
+        },
+        {
+          path: 'notifications', 
+          name: 'notifications',
+          component: () => import('@/views/NotificationsView.vue')
+        },
+        {
+          path: 'history',
+          name: 'history',
+          component: () => import('@/views/HistoryView.vue')
         }
       ]
     }
