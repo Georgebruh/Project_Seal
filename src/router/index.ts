@@ -23,7 +23,7 @@ const router = createRouter({
       component: () => import('@/layouts/DashboardLayout.vue'),
       children: [
         {
-          path: 'freelancer', // <-- Removed the leading slash
+          path: 'freelancer', 
           name: 'freelancer-dashboard',
           component: () => import('@/views/FreelancerDashboard.vue')
         },
@@ -33,7 +33,7 @@ const router = createRouter({
           component: () => import('@/views/AnalyticsView.vue')
         },
         {
-          path: 'client', // <-- Removed the leading slash
+          path: 'client', 
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
         },
