@@ -1,23 +1,59 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth' // Import the auth store
 
 const router = useRouter()
+const authStore = useAuthStore() // Initialize the store
+
 const step = ref(1)
 const phoneNumber = ref('')
 const otpDigits = ref(['', '', '', '', '', ''])
 const otpInputs = ref<HTMLInputElement[]>([])
+const errorMessage = ref('') // Store error messages to display in the UI
 
-const handleSendOTP = () => {
+const handleSendOTP = async () => {
+  errorMessage.value = '' // Reset errors
+  
   if (phoneNumber.value.length >= 10) {
-    step.value = 2
+    try {
+      // 1. Check if phone exists in the Profiles table first
+      const exists = await authStore.checkPhoneExists(phoneNumber.value)
+      
+      if (!exists) {
+        errorMessage.value = "Phone number is not registered."
+        return
+      }
+
+      // 2. Trigger SMS OTP via Twilio/Supabase (auth.ts handles E.164 formatting now)
+      await authStore.sendPhoneOtp(phoneNumber.value)
+      step.value = 2 // Advance to OTP screen
+      
+    } catch (error: any) {
+      errorMessage.value = error.message || "Failed to send OTP. Please try again."
+    }
+  } else {
+    errorMessage.value = "Please enter a valid phone number."
   }
 }
 
-const handleVerifyOTP = () => {
+const handleVerifyOTP = async () => {
+  errorMessage.value = '' // Reset errors
   const code = otpDigits.value.join('')
+  
   if (code.length === 6) {
-    router.push('/freelancer')
+    try {
+      // 3. Verify the OTP entered by the user
+      await authStore.verifyPhoneOtp(phoneNumber.value, code)
+      
+      // 4. Redirect to Client Dashboard on success
+      router.push('/client')
+      
+    } catch (error: any) {
+      errorMessage.value = error.message || "Invalid OTP code. Please try again."
+    }
+  } else {
+    errorMessage.value = "Please enter the full 6-digit code."
   }
 }
 
@@ -63,6 +99,8 @@ const onOtpKeydown = (index: number, event: KeyboardEvent) => {
             </div>
           </div>
 
+          <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+
           <button class="btn-primary" @click="handleSendOTP">Send OTP</button>
         </div>
 
@@ -73,7 +111,7 @@ const onOtpKeydown = (index: number, event: KeyboardEvent) => {
             <label>One-Time Password</label>
             <div class="otp-container">
               <input
-                v-for="(_digit, index) in 6"
+                v-for="(digit, index) in otpDigits"
                 :key="index"
                 ref="otpInputs"
                 v-model="otpDigits[index]"
@@ -87,9 +125,11 @@ const onOtpKeydown = (index: number, event: KeyboardEvent) => {
             </div>
           </div>
 
+          <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+
           <div class="button-group">
             <button class="btn-primary" @click="handleVerifyOTP">Verify & Login</button>
-            <button class="btn-secondary" @click="step = 1">Change phone number</button>
+            <button class="btn-secondary" @click="step = 1; errorMessage = ''">Change phone number</button>
           </div>
         </div>
 
@@ -269,5 +309,14 @@ label {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Added a small styling class for your error messages */
+.error-text {
+  color: #d9534f;
+  font-size: 12px;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
 }
 </style>
