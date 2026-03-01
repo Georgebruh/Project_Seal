@@ -10,15 +10,15 @@ const router = useRouter()
 const isLoading = ref(true)
 const freelancerName = ref('Freelancer')
 
-// Empty data containers waiting to be filled
-const earningsData = ref({ amount: '', trend: '', completedThisMonth: 0 })
+// Real reactive data containers
+const earningsData = ref({ amount: '₱0', trend: 'Updated', completedThisMonth: 0 })
 const activeProjectsData = ref({ total: 0, nearDeadline: [] as any[] })
 const transactionsData = ref([] as any[])
 
 // Real Seals Data
 const activeSealsList = ref<any[]>([])
 
-// Helper function to match your UI colors to real database statuses
+// Helper function to match your UI colors
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Pending review': return 'bg-amber-100 text-amber-700'
@@ -38,46 +38,112 @@ onMounted(async () => {
     
     if (userError || !user) throw new Error('User not authenticated')
 
-    // 2. Fetch the user's Profile (for full_name) and their Active Seals concurrently
-    const [profileRes, sealsRes, metrics] = await Promise.all([
+    // 2. Fetch Profile, Active Seals, and Completed Seals concurrently
+    const [profileRes, activeSealsRes, completedSealsRes, metrics] = await Promise.all([
       supabase
         .from('Profiles')
         .select('full_name')
         .eq('id', user.id)
         .single(),
       
+      // Fetch Active Seals (added end_date for deadline calculation)
       supabase
         .from('Seals')
-        .select('id, project_name, project_type, start_date, total_amount, status')
+        .select('id, project_name, project_type, start_date, end_date, total_amount, status')
         .eq('freelancer_id', user.id)
         .neq('status', 'Completed') 
         .neq('status', 'Cancelled')
         .order('created_at', { ascending: false }),
+
+      // Fetch Completed Seals (for Total Earnings calculation)
+      supabase
+        .from('Seals')
+        .select('total_amount, end_date')
+        .eq('freelancer_id', user.id)
+        .eq('status', 'Completed'),
         
-      getFreelancerMetrics() 
+      getFreelancerMetrics() // Keeping for the mock transactions
     ])
 
-    // Handle Profile Name
+    // --- HANDLE PROFILE NAME ---
     if (profileRes.data && profileRes.data.full_name) {
       freelancerName.value = profileRes.data.full_name.split(' ')[0]
     }
 
-    // Handle Active Seals mapped to your UI structure
-    if (sealsRes.data) {
-      activeSealsList.value = sealsRes.data.map(seal => ({
-        id: seal.id,
-        title: seal.project_name,
-        subtitle: seal.project_type || 'General Project',
-        date: new Date(seal.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        amount: `₱${seal.total_amount.toLocaleString()}`,
-        status: seal.status,
-        statusBg: getStatusColor(seal.status)
-      }))
+    // --- SETUP DATES FOR CALCULATIONS ---
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const threeDaysFromNow = new Date(today)
+    threeDaysFromNow.setDate(today.getDate() + 3)
+    
+    const currentMonth = today.getMonth()
+    const currentYear = today.getFullYear()
+
+    // --- PROCESS ACTIVE SEALS & DEADLINES ---
+    if (activeSealsRes.data) {
+      const nearDeadlineList: any[] = []
+
+      activeSealsList.value = activeSealsRes.data.map(seal => {
+        // Calculate Deadlines
+        if (seal.end_date) {
+          const endDate = new Date(seal.end_date)
+          endDate.setHours(0, 0, 0, 0)
+          
+          if (endDate >= today && endDate <= threeDaysFromNow) {
+            nearDeadlineList.push({
+              id: seal.id,
+              name: seal.project_name,
+              date: endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            })
+          }
+        }
+
+        // Map data for the UI list
+        return {
+          id: seal.id,
+          title: seal.project_name,
+          subtitle: seal.project_type || 'General Project',
+          date: new Date(seal.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          amount: `₱${seal.total_amount.toLocaleString()}`,
+          status: seal.status,
+          statusBg: getStatusColor(seal.status)
+        }
+      })
+
+      // Update the Active Projects metrics box
+      activeProjectsData.value = {
+        total: activeSealsRes.data.length,
+        nearDeadline: nearDeadlineList
+      }
     }
 
-    // Assign mock metrics data
-    earningsData.value = metrics.earnings
-    activeProjectsData.value = metrics.projects
+    // --- PROCESS COMPLETED SEALS (EARNINGS) ---
+    if (completedSealsRes.data) {
+      let totalEarnings = 0
+      let completedThisMonthCount = 0
+
+      completedSealsRes.data.forEach(seal => {
+        totalEarnings += Number(seal.total_amount || 0)
+        
+        // Count if completed this month based on the end_date
+        if (seal.end_date) {
+          const endDate = new Date(seal.end_date)
+          if (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear) {
+            completedThisMonthCount++
+          }
+        }
+      })
+
+      // Update the Earnings metrics box
+      earningsData.value = {
+        amount: `₱${totalEarnings.toLocaleString()}`,
+        trend: 'Up to date',
+        completedThisMonth: completedThisMonthCount
+      }
+    }
+
+    // Assign mock transaction data (until you build out the Transactions table)
     transactionsData.value = metrics.transactions
     
   } catch (error) {
