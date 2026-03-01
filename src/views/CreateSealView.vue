@@ -7,12 +7,11 @@ const router = useRouter()
 
 const currentStep = ref(1)
 const isSubmitting = ref(false)
-// sealLink is for creating the dummy link
 const sealLink = ref('')
 const showLink = ref(false)
 const linkPressed = ref(false)
 
-// Form Data State - Synchronized to snake_case based on the Seals table 
+// Form Data State - Removed the manual slug
 const form = ref({
   project_name: '',
   total_amount: null as number | null,
@@ -22,7 +21,6 @@ const form = ref({
     notes: ''
   },
   status: 'Pending review',
-  shareable_link_slug: '',
   project_type: 'Web Development',
   scope: '',
   contract_template: 'Standard Service Agreement',
@@ -34,9 +32,7 @@ const form = ref({
   client_name: ''
 })
 
-// Validation State
 const errors = ref<Record<string, string>>({})
-
 const projectTypes = ['Web Development', 'Mobile App', 'Graphic Design', 'Writing', 'Consulting', 'Other']
 const templates = ['Standard Service Agreement', 'Work for Hire Agreement', 'NDA + Basic Services']
 
@@ -63,8 +59,6 @@ By accepting this Seal, both parties agree to the terms outlined above and the p
   `.trim()
 })
 
-
-// Validation logic
 const validateStep1 = () => {
   errors.value = {} 
   let isValid = true
@@ -106,7 +100,6 @@ const copyLink = async () => {
 const submitSeal = async () => {
   isSubmitting.value = true
   
-  //gets authentication user to match with auth.uid()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
@@ -115,34 +108,41 @@ const submitSeal = async () => {
     return
   }
 
-  const newSlug = Date.now().toString(36)
-  
-  
+  const dummySlug = Date.now().toString(36)
+
   const payload = {
     ...form.value,
-    freelancer_id: user.id, // required to associate seal with the user and for it to be compared to auth.uid()
-    shareable_link_slug: newSlug,
+    freelancer_id: user.id,
+    shareable_link_slug: dummySlug,
     contract_text: generatedContract.value,
-    service_fee: form.value.total_amount ? (form.value.total_amount * 0.05).toFixed(2) : 0 // Example 5% fee calculation
+    service_fee: form.value.total_amount ? (form.value.total_amount * 0.05).toFixed(2) : 0 
   }
 
-  
-  sealLink.value = `${window.location.origin}/seal/${newSlug}` //dummy link
-  
-  
-  const { error } = await supabase
+  // 1. Insert and instantly return the auto-generated UUID
+  const { data: newSeal, error: insertError } = await supabase
     .from('Seals')
     .insert(payload)
+    .select()
     .single()
   
-  if (error) {
-    console.error('Error saving seal:', error)
-    alert('Database error: ' + error.message)
+  if (insertError || !newSeal) {
+    console.error('Error saving seal:', insertError)
+    alert('Database error: ' + (insertError?.message || 'Unknown error'))
     isSubmitting.value = false
-  } else {
-    isSubmitting.value = false
-    showLink.value = true
-  }
+    return
+  } 
+
+  // 2. Generate the shareable link using the real database UUID
+  sealLink.value = `${window.location.origin}/seal/${newSeal.id}`
+  
+  // 3. Update the database to store the link
+  await supabase
+    .from('Seals')
+    .update({ shareable_link: sealLink.value })
+    .eq('id', newSeal.id)
+
+  isSubmitting.value = false
+  showLink.value = true
 }
 </script>
 
