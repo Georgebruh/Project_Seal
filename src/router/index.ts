@@ -28,6 +28,12 @@ const router = createRouter({
           component: () => import('@/views/FreelancerDashboard.vue')
         },
         {
+          path: 'my-seals',
+          name: 'my-seals',
+          component: () => import('@/views/MySealsView.vue')
+        },
+        
+        {
           path: 'analytics',
           name: 'analytics',
           component: () => import('@/views/AnalyticsView.vue')
