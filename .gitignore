@@ -40,3 +40,4 @@ __screenshots__/
 
 #API-keys
 .env
+.env.local
