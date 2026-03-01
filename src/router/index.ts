@@ -1,17 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '@/views/LoginView.vue' // <-- ADD THIS BACK
+import LoginView from '@/views/LoginView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/login', // <-- ADD THIS BACK
+      path: '/login', 
       name: 'login',
       component: LoginView 
     },
     {
       path: '/',
-      redirect: '/login' // <-- SEND USERS TO LOGIN FIRST
+      redirect: '/login' 
     },
     {
       path: '/pay/:id',
@@ -23,7 +23,7 @@ const router = createRouter({
       component: () => import('@/layouts/DashboardLayout.vue'),
       children: [
         {
-          path: '/freelancer',
+          path: 'freelancer', // <-- Removed the leading slash
           name: 'freelancer-dashboard',
           component: () => import('@/views/FreelancerDashboard.vue')
         },
@@ -33,7 +33,7 @@ const router = createRouter({
           component: () => import('@/views/AnalyticsView.vue')
         },
         {
-          path: '/client',
+          path: 'client', // <-- Removed the leading slash
           name: 'client-dashboard',
           component: () => import('@/views/ClientDashboard.vue')
         },
