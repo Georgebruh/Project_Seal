@@ -91,6 +91,27 @@ export const useAuthStore = defineStore('auth', () => {
     return data
   }
 
+  // 4. Initialize Auth State on Page Load
+  const initialize = async () => {
+    // Check local storage for an existing session
+    const { data } = await supabase.auth.getSession()
+    if (data.session) {
+      user.value = data.session.user
+      isAuthenticated.value = true
+    }
+
+    // Listen for any changes (like if the token expires or user logs out)
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        user.value = session.user
+        isAuthenticated.value = true
+      } else {
+        user.value = null
+        isAuthenticated.value = false
+      }
+    })
+  }
+
   // --- Keep your existing actions below ---
   const logout = async () => {
     const { error } = await supabase.auth.signOut()
@@ -108,6 +129,7 @@ export const useAuthStore = defineStore('auth', () => {
     checkPhoneExistsAndGetEmail,
     sendEmailOtp,
     verifyEmailOtp,
-    logout
+    logout,
+    initialize
   }
 })
