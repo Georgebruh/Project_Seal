@@ -15,7 +15,16 @@ const seal = ref<any>(null)
 const freelancerName = ref('Loading...')
 const clientName = ref('Awaiting Client')
 
+// Inline Login State
+const loginStep = ref(1)
+const loginPhone = ref('')
+const loginOtp = ref('')
+const loginError = ref('')
+const isLoggingIn = ref(false)
+
 onMounted(async () => {
+  // Ensure auth state is initialized before fetching
+  await authStore.initialize()
   await fetchSealDetails()
 })
 
@@ -23,7 +32,6 @@ const fetchSealDetails = async () => {
   try {
     isLoading.value = true
     
-    // 1. Fetch the Seal Data
     const { data: sealData, error: sealError } = await supabase
       .from('Seals')
       .select('*')
@@ -33,12 +41,10 @@ const fetchSealDetails = async () => {
     if (sealError) throw sealError
     seal.value = sealData
 
-    // Set initial client name using your new column
     clientName.value = sealData.client_id
       ? (sealData.client_name || 'Unknown Client')
       : `Awaiting: ${sealData.client_name || 'Client'}`
 
-    // 2. Fetch Freelancer Profile Name
     if (sealData.freelancer_id) {
       const { data: fData } = await supabase
         .from('Profiles')
@@ -48,16 +54,23 @@ const fetchSealDetails = async () => {
       if (fData) freelancerName.value = fData.full_name || 'Unknown Freelancer'
     }
 
-    // 3. Fetch Client Profile Name (if a client has accepted it)
     if (sealData.client_id) {
       const { data: cData } = await supabase
         .from('Profiles')
         .select('full_name')
         .eq('id', sealData.client_id)
         .single()
-      // Overwrite the reference name with the client's actual registered profile name
       if (cData && cData.full_name) {
         clientName.value = cData.full_name 
+      }
+    }
+
+    // Dynamic Role Assignment
+    if (authStore.user) {
+      if (authStore.user.id !== sealData.freelancer_id) {
+        authStore.activeRole = 'client'
+      } else {
+        authStore.activeRole = 'freelancer'
       }
     }
 
@@ -68,7 +81,39 @@ const fetchSealDetails = async () => {
   }
 }
 
-// Map real database statuses to UI
+// Login Handlers
+const handlePhoneSubmit = async () => {
+  loginError.value = ''
+  isLoggingIn.value = true
+  try {
+    const email = await authStore.checkPhoneExistsAndGetEmail(loginPhone.value)
+    if (email) {
+      await authStore.sendEmailOtp(email)
+      loginStep.value = 2
+    } else {
+      loginError.value = 'Phone number not recognized in the system.'
+    }
+  } catch (err: any) {
+    loginError.value = err.message || 'Failed to verify phone.'
+  } finally {
+    isLoggingIn.value = false
+  }
+}
+
+const handleOtpSubmit = async () => {
+  loginError.value = ''
+  isLoggingIn.value = true
+  try {
+    await authStore.verifyEmailOtp(loginOtp.value)
+    // Re-evaluate roles now that they are logged in
+    await fetchSealDetails()
+  } catch (err: any) {
+    loginError.value = err.message || 'Invalid OTP code.'
+  } finally {
+    isLoggingIn.value = false
+  }
+}
+
 interface StatusInfo {
   label: string
   color: string
@@ -77,10 +122,7 @@ interface StatusInfo {
 }
 
 const statusInfo = computed<StatusInfo>(() => {
-  if (!seal.value) {
-    // return a default to satisfy typing, though the template guards with v-if
-    return { label: '', color: '', icon: '', progress: '' }
-  }
+  if (!seal.value) return { label: '', color: '', icon: '', progress: '' }
   
   const map: Record<string, StatusInfo> = {
     'Pending review': { 
@@ -115,27 +157,29 @@ const statusInfo = computed<StatusInfo>(() => {
     }
   }
   
-  const result = map[seal.value.status as string] || map['Pending review']
-  return result as StatusInfo
+  return (map[seal.value.status as string] || map['Pending review']) as StatusInfo
 })
 
-// Calculate deposit based on the percentage set in the database (default 100%)
 const depositAmount = computed(() => {
   if (!seal.value) return 0
   const percentage = seal.value.deposit_percentage || 100
   return seal.value.total_amount * (percentage / 100)
 })
 
-// --- DATABASE ACTIONS ---
-
 const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('Seals')
       .update({ status: newStatus, ...additionalUpdates })
       .eq('id', seal.value.id)
+      .select() // Force Supabase to return the updated row
 
     if (error) throw error
+    
+    // Catch the silent RLS failure
+    if (!data || data.length === 0) {
+      throw new Error('Update blocked by database security policies (RLS).')
+    }
     
     // Update local state so UI reacts instantly
     seal.value.status = newStatus
@@ -144,21 +188,19 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
     // Refresh names just in case
     if (additionalUpdates.client_id) await fetchSealDetails()
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating status:', error)
-    alert('Failed to update status. Check permissions.')
+    alert(error.message || 'Failed to update status. Check permissions.')
   }
 }
 
 // Client Actions
 const clientAcceptContract = async () => {
-  // Binds the currently logged-in user as the client and moves to funding
   await updateSealStatus('Awaiting funding', { client_id: authStore.user.id })
 }
 
-const clientFundEscrow = async () => {
-  alert(`In a future update, this will open the payment gateway for ₱${depositAmount.value.toLocaleString()}.`)
-  await updateSealStatus('In progress')
+const proceedToPayment = () => {
+  router.push(`/pay/${seal.value.id}`)
 }
 
 const clientApproveWork = async () => {
@@ -167,7 +209,6 @@ const clientApproveWork = async () => {
   }
 }
 
-// Freelancer Actions
 const freelancerCancel = async () => {
   if(confirm('Are you sure you want to cancel this seal?')) {
     await updateSealStatus('Cancelled')
@@ -182,8 +223,51 @@ const freelancerCancel = async () => {
       <svg class="animate-spin h-8 w-8 text-seal-teal" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
     </div>
 
+    <div v-else-if="!authStore.isAuthenticated" class="max-w-md mx-auto mt-16 bg-white p-8 rounded-3xl border border-gray-100 shadow-xl text-center">
+      <div class="w-16 h-16 bg-teal-50 text-seal-teal rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+      </div>
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Access Project Seal</h2>
+      <p class="text-gray-500 mb-8 text-sm">Verify your identity to securely view and manage your digital contract.</p>
+      
+      <div v-if="loginStep === 1" class="space-y-4">
+        <input 
+          v-model="loginPhone" 
+          type="text" 
+          placeholder="Enter your registered phone number" 
+          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors"
+        />
+        <button 
+          @click="handlePhoneSubmit" 
+          :disabled="isLoggingIn || !loginPhone"
+          class="w-full py-3 bg-seal-teal text-white font-bold rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {{ isLoggingIn ? 'Verifying...' : 'Continue' }}
+        </button>
+      </div>
+
+      <div v-if="loginStep === 2" class="space-y-4">
+        <p class="text-sm font-medium text-gray-700 mb-2">Check your email for the OTP code.</p>
+        <input 
+          v-model="loginOtp" 
+          type="text" 
+          placeholder="Enter OTP Code" 
+          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors text-center tracking-widest font-mono text-lg"
+        />
+        <button 
+          @click="handleOtpSubmit" 
+          :disabled="isLoggingIn || !loginOtp"
+          class="w-full py-3 bg-seal-teal text-white font-bold rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {{ isLoggingIn ? 'Logging In...' : 'Verify OTP' }}
+        </button>
+      </div>
+
+      <p v-if="loginError" class="mt-4 text-sm text-red-500 font-medium">{{ loginError }}</p>
+    </div>
+
     <div v-else-if="seal">
-      <div class="mb-8 flex items-center justify-between">
+      <div class="mb-8 flex items-center justify-between mt-4">
         <div>
           <button @click="router.back()" class="text-sm font-medium text-gray-500 hover:text-seal-teal transition-colors flex items-center mb-3">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -195,7 +279,6 @@ const freelancerCancel = async () => {
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         <div class="lg:col-span-2 space-y-6">
           <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-full">
             <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
@@ -241,24 +324,23 @@ const freelancerCancel = async () => {
             <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Client Actions</h3>
             
             <div v-if="seal.status === 'Pending review'">
-              <p class="text-sm text-gray-600 mb-4">Review the contract text. By accepting, you agree to these terms and bind yourself to this project.</p>
+              <p class="text-sm text-gray-600 mb-4">Review the contract text. By confirming, you agree to these terms and bind yourself to this project.</p>
               <button @click="clientAcceptContract" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition-colors">
-                Accept Contract
+                Confirm Contract
               </button>
             </div>
 
             <div v-else-if="seal.status === 'Awaiting funding'">
-              <p class="text-sm text-gray-600 mb-4">You need to fund the escrow before the freelancer will begin work. Funds are held securely until you approve the final delivery.</p>
+              <p class="text-sm text-gray-600 mb-4">You need to fund the escrow before the freelancer will begin work.</p>
               <div class="bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
-                <div class="flex justify-between text-sm mb-2"><span class="text-gray-500">Total Project</span><span class="font-medium">₱{{ seal.total_amount.toLocaleString() }}</span></div>
-                <div class="flex justify-between text-sm mb-2"><span class="text-gray-500">Deposit Req.</span><span class="font-medium">{{ seal.deposit_percentage || 100 }}%</span></div>
-                <div class="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200 mt-2">
+                <div class="flex justify-between font-bold text-gray-900">
                   <span>Due to Escrow</span>
                   <span class="text-lg text-seal-teal">₱{{ depositAmount.toLocaleString() }}</span>
                 </div>
               </div>
-              <button @click="clientFundEscrow" class="w-full py-3.5 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold shadow-sm transition-colors">
-                Deposit to Secure Escrow
+              <button @click="proceedToPayment" class="w-full py-3.5 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold shadow-sm transition-colors flex justify-center items-center">
+                Proceed to Payment
+                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
               </button>
             </div>
 

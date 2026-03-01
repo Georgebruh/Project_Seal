@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { supabase } from '@/supabase'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,19 +20,50 @@ const appliedSignature = ref('')
 // Check if the contract has been signed
 const isSigned = computed(() => appliedSignature.value.trim().length > 0)
 
-// Mock Fetching the Transaction Details
-onMounted(() => {
-  setTimeout(() => {
-    transaction.value = {
-      id: transactionId,
-      projectName: 'E-Commerce Website Redesign',
-      freelancerName: 'Alex Developer',
-      totalAmount: 45000,
-      depositPercentage: 50,
-      contractText: `CONTRACT OF SERVICE: STANDARD SERVICE AGREEMENT\n\nThis Agreement is made for the project "E-Commerce Website Redesign".\n\n1. SCOPE OF WORK:\nComplete overhaul of the existing WooCommerce frontend. Implementing a new responsive design, optimizing checkout flow, and adding advanced product filtering.\n\n2. COMPENSATION:\nThe total compensation for this project is ₱45,000.00.\nA deposit of 50% (₱22,500.00) is required to be placed in escrow to begin work.\n\n3. PAYMENT TERMS:\nThe remaining balance shall be paid in full upon project completion.\n\nBy typing your name below and submitting this digital signature, you agree to the terms outlined above and the platform's escrow conditions.`
+// Fetching the Transaction Details from Supabase
+onMounted(async () => {
+  try {
+    isLoading.value = true
+
+    // 1. Fetch the Seal Data
+    const { data: sealData, error: sealError } = await supabase
+      .from('Seals')
+      .select('*')
+      .eq('id', transactionId)
+      .single()
+
+    if (sealError) throw sealError
+
+    // 2. Fetch Freelancer Name
+    let fName = 'Unknown Freelancer'
+    if (sealData.freelancer_id) {
+      const { data: profileData } = await supabase
+        .from('Profiles')
+        .select('full_name')
+        .eq('id', sealData.freelancer_id)
+        .single()
+      
+      if (profileData && profileData.full_name) {
+        fName = profileData.full_name
+      }
     }
+
+    // 3. Map to the transaction object to match your template
+    transaction.value = {
+      id: sealData.id,
+      projectName: sealData.project_name,
+      freelancerName: fName,
+      totalAmount: sealData.total_amount,
+      depositPercentage: sealData.deposit_percentage || 100,
+      contractText: sealData.contract_text
+    }
+
+  } catch (error) {
+    console.error('Error fetching checkout details:', error)
+    alert('Failed to load transaction details.')
+  } finally {
     isLoading.value = false
-  }, 600)
+  }
 })
 
 const depositAmount = computed(() => {
@@ -52,7 +84,7 @@ const handlePayMongoCheckout = () => {
   // Simulate calling your backend to generate a PayMongo Checkout Session
   setTimeout(() => {
     alert('Mock: Redirecting to secure PayMongo gateway...')
-    router.push('/client') 
+    router.push('/dashboard/client') 
   }, 1200)
 }
 </script>
