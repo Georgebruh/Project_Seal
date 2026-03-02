@@ -14,6 +14,12 @@ const router = createRouter({
       redirect: '/login' 
     },
     {
+      path: '/payment-success',
+      name: 'payment-success',
+      component: () => import('@/views/PaymentSuccessView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/pay/:id',
       name: 'secure-checkout',
       component: () => import('@/views/TransactionCheckoutView.vue')

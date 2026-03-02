@@ -78,14 +78,32 @@ const signContract = () => {
   }
 }
 
-const handlePayMongoCheckout = () => {
-  isProcessing.value = true
+const handlePayMongoCheckout = async () => {
+  try {
+    isProcessing.value = true
+    
+    // Call the PayMongo Edge Function
+    const { data, error } = await supabase.functions.invoke('create-paymongo-checkout', {
+      body: { 
+        amount: depositAmount.value, 
+        description: `Escrow Deposit for ${transaction.value.projectName}`,
+        successUrl: `${window.location.origin}/payment-success?seal_id=${transaction.value.id}`,
+        cancelUrl: window.location.href 
+      }
+    })
 
-  // Simulate calling your backend to generate a PayMongo Checkout Session
-  setTimeout(() => {
-    alert('Mock: Redirecting to secure PayMongo gateway...')
-    router.push('/dashboard/client') 
-  }, 1200)
+    if (error) throw error
+    if (data && data.checkoutUrl) {
+      // Redirect the client to the secure PayMongo gateway
+      window.location.href = data.checkoutUrl
+    } else {
+      throw new Error("No checkout URL returned")
+    }
+  } catch (error) {
+    console.error('Payment initialization failed:', error)
+    alert('Failed to connect to payment gateway. Please try again.')
+    isProcessing.value = false
+  }
 }
 </script>
 

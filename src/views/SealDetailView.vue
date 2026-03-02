@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 const sealId = route.params.id as string
 
 const isLoading = ref(true)
+const isProcessingPayment = ref(false) // NEW: Added for payment loading state
 const seal = ref<any>(null)
 const freelancerName = ref('Loading...')
 const clientName = ref('Awaiting Client')
@@ -21,6 +22,9 @@ const loginPhone = ref('')
 const loginOtp = ref('')
 const loginError = ref('')
 const isLoggingIn = ref(false)
+
+// Link Copy State
+const linkPressed = ref(false)
 
 onMounted(async () => {
   // Ensure auth state is initialized before fetching
@@ -122,7 +126,9 @@ interface StatusInfo {
 }
 
 const statusInfo = computed<StatusInfo>(() => {
-  if (!seal.value) return { label: '', color: '', icon: '', progress: '' }
+  if (!seal.value) {
+    return { label: '', color: '', icon: '', progress: '' }
+  }
   
   const map: Record<string, StatusInfo> = {
     'Pending review': { 
@@ -166,6 +172,24 @@ const depositAmount = computed(() => {
   return seal.value.total_amount * (percentage / 100)
 })
 
+const generatedSealLink = computed(() => {
+  if (!seal.value) return ''
+  return `${window.location.origin}/seal/${seal.value.id}`
+})
+
+const copySealLink = async () => {
+  if (!generatedSealLink.value) return
+  try {
+    await navigator.clipboard.writeText(generatedSealLink.value)
+    linkPressed.value = true
+    setTimeout(() => {
+      linkPressed.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Clipboard write failed', err)
+  }
+}
+
 const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) => {
   try {
     const { data, error } = await supabase
@@ -184,8 +208,6 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
     // Update local state so UI reacts instantly
     seal.value.status = newStatus
     if (additionalUpdates.client_id) seal.value.client_id = additionalUpdates.client_id
-    
-    // Refresh names just in case
     if (additionalUpdates.client_id) await fetchSealDetails()
     
   } catch (error: any) {
@@ -194,7 +216,6 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
   }
 }
 
-// Client Actions
 const clientAcceptContract = async () => {
   await updateSealStatus('Awaiting funding', { client_id: authStore.user.id })
 }
@@ -214,6 +235,17 @@ const freelancerCancel = async () => {
     await updateSealStatus('Cancelled')
   }
 }
+
+const handleBackToList = () => {
+  // Check if Vue Router has an internal back state
+  if (window.history.state && window.history.state.back) {
+    router.back()
+  } else {
+    // If no app history (direct link / new tab), push to the unified list
+    router.push({ name: 'my-seals' })
+  }
+}
+
 </script>
 
 <template>
@@ -269,7 +301,7 @@ const freelancerCancel = async () => {
     <div v-else-if="seal">
       <div class="mb-8 flex items-center justify-between mt-4">
         <div>
-          <button @click="router.back()" class="text-sm font-medium text-gray-500 hover:text-seal-teal transition-colors flex items-center mb-3">
+          <button @click="handleBackToList" class="text-sm font-medium text-gray-500 hover:text-seal-teal transition-colors flex items-center mb-3">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Back to List
           </button>
@@ -287,7 +319,7 @@ const freelancerCancel = async () => {
                 Digital Service Contract & Scope
               </h3>
             </div>
-            <div class="p-8 bg-white font-mono text-sm text-gray-700 whitespace-pre-wrap leading-relaxed h-125 overflow-y-auto">
+            <div class="flex-1 p-8 bg-white font-mono text-sm text-gray-700 whitespace-pre-wrap leading-relaxed overflow-y-auto">
               {{ seal.contract_text }}
               
               <div class="mt-8 pt-4 border-t border-gray-200">
@@ -415,6 +447,20 @@ const freelancerCancel = async () => {
                   {{ new Date(seal.start_date).toLocaleDateString() }} to {{ new Date(seal.end_date).toLocaleDateString() }}
                 </span>
               </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Shareable Link</h3>
+            <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+              <input
+                class="flex-1 bg-transparent focus:outline-none text-xs text-gray-600 truncate"
+                readonly
+                :value="generatedSealLink"
+              />
+              <button @click="copySealLink" class="ml-2 px-3 py-1.5 bg-seal-teal text-white rounded-md text-xs font-bold hover:bg-teal-700 transition-colors shrink-0">
+                {{ linkPressed ? 'Copied!' : 'Copy' }}
+              </button>
             </div>
           </div>
 
