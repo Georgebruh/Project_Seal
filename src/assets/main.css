@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  /* Set Tailwind's default sans font to Geist */
-  --font-sans: 'Geist', sans-serif;
+  /* Set Tailwind's default sans font to Plus Jakarta Sans */
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
   
   --color-seal-teal: #0d9488;
   --color-seal-dark: #111827;
@@ -15,15 +15,14 @@ body {
   background: linear-gradient(180deg, #FFFFFF 0%, #5F9598 100%);
   background-attachment: fixed; 
   background-repeat: no-repeat;
-  /* These two lines are especially important for making Geist look crisp! */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Force Geist everywhere */
-  font-family: 'Geist', sans-serif !important;
+  /* Force Plus Jakarta Sans everywhere */
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
 /* Ensure nothing overrides it */
 h1, h2, h3, h4, h5, h6, p, span, button, a, div, input, select {
-  font-family: 'Geist', sans-serif !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
