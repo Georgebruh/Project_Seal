@@ -252,7 +252,7 @@ onMounted(async () => {
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
         <h3 class="text-lg font-bold text-gray-900">Active Seals</h3>
-        <button @click="router.push('/my-seals')" class="text-sm font-semibold text-seal-teal hover:underline">View All</button>
+        <button @click="router.push('/dashboard/my-seals')" class="text-sm font-semibold text-seal-teal hover:underline">View All</button>
       </div>
       
       <div v-if="isLoading" class="p-6 text-center text-gray-500 text-sm">
