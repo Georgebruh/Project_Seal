@@ -92,7 +92,7 @@ const goToSealDetail = (id: number) => {
         >
           <div class="flex justify-between items-start mb-4">
             <div>
-              <h3 class="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Pending Review</h3>
+              <h3 class="text-lg font-bold text-gray-900 group-hover:text-purple-600 transition-colors">Awaiting Funding</h3>
               <p class="text-sm text-gray-600">Awaiting your approval to release funds</p>
             </div>
             <div class="text-3xl font-bold text-purple-600">{{ dashboardData?.pendingReview.total }}</div>

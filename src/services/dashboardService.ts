@@ -138,10 +138,10 @@ export const getClientDashboardData = async (userId: string): Promise<ClientDash
 // Helper to keep logic out of the component
 const getStatusColor = (status: string): string => {
   const map: Record<string, string> = {
-    'In Progress': 'bg-blue-100 text-blue-700',
-    'Pending Review': 'bg-purple-100 text-purple-700',
+    'In progress': 'bg-blue-100 text-blue-700',
+    'Pending review': 'bg-purple-100 text-purple-700',
     'Completed': 'bg-emerald-100 text-emerald-700',
-    'Awaiting Funding': 'bg-amber-100 text-amber-700'
+    'Awaiting funding': 'bg-amber-100 text-amber-700'
   };
   
   return map[status] || 'bg-gray-100 text-gray-700';
