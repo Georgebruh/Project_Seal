@@ -35,9 +35,9 @@ We engineered Project Seal with a modern, type-safe, and highly scalable stack:
 * **Payments:** Integrated **PayMongo** via Supabase Edge Functions (`create-paymongo-checkout`) to handle secure financial transactions.
 
 ## 🚀 The Hackathon Journey
-* **The Challenge:** [Briefly mention a technical hurdle here, e.g., handling the async nature of third-party payment webhooks or managing complex state between two distinct user types]
+* **The Challenge:** Trying to separate the tools of a Freelancer and a Client were tricky, as the user can be both at the same time. Syncing their data depending on what type of "mode" they are currently in definitely was a headache.
 * **The Accomplishment:** We are incredibly proud of successfully implementing a seamless flow from agreement creation to secure payment processing within the tight hackathon timeframe. 
-* **The Takeaway:** [Add a sentence about what you learned, e.g., working with Supabase Edge Functions or Deno]
+* **The Takeaway:** Working with supabase allowed us to utilize once of its greatest features, which are edge functions to implement a working testing environment for Paymongo.
 
 ## ⚙️ Running Project Seal Locally
 
@@ -53,7 +53,7 @@ Want to test out the platform? Follow these steps:
 
 1. **Clone the repository:**
 ```bash
-git clone [https://github.com/georgebruh/project_seal.git](https://github.com/georgebruh/project_seal.git)
+git clone https://github.com/georgebruh/project_seal.git
 cd project_seal
 ```
 
