@@ -24,7 +24,6 @@ const router = createRouter({
       name: 'secure-checkout',
       component: () => import('@/views/TransactionCheckoutView.vue')
     },
-    // Moved to top-level to perfectly match your shareable links!
     {
       path: '/seal/:id',
       name: 'seal-detail',
@@ -43,6 +42,11 @@ const router = createRouter({
           path: 'my-seals',
           name: 'my-seals',
           component: () => import('@/views/MySealsView.vue')
+        },
+        {
+          path: 'calendar',
+          name: 'freelancer-calendar',
+          component: () => import('@/views/FreelancerCalendarView.vue')
         },
         {
           path: 'analytics',
@@ -75,7 +79,6 @@ const router = createRouter({
           component: () => import('@/views/ProfileView.vue')
         }
       ]
-      
     }
   ],
 })
