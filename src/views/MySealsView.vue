@@ -2,8 +2,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const isLoading = ref(true)
 const searchQuery = ref('')
 
@@ -18,33 +20,39 @@ onMounted(async () => {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw new Error('User not authenticated')
 
-    // 2. Fetch all seals for this user (Completed or Not)
+    // 2. Dynamically choose which column to query based on the active role
+    const roleColumn = authStore.activeRole === 'client' ? 'client_id' : 'freelancer_id'
+
+    // 3. Fetch seals for this user
     const { data: sealsData, error: sealsError } = await supabase
       .from('Seals')
       .select('*')
-      .eq('freelancer_id', user.id)
+      .eq(roleColumn, user.id)
       .order('created_at', { ascending: false })
 
     if (sealsError) throw sealsError
 
-    // 3. Map the database data to your UI structure
+    // 4. Map the database data to your UI structure
     if (sealsData) {
       allSeals.value = sealsData.map(seal => {
-        
-        // Generate a clean Display ID from the UUID (e.g., SEAL-a1b2c3d4)
         const shortId = seal.id.substring(0, 8).toUpperCase()
+        
+        // Determine the "other person" in the transaction
+        let counterpartName = ''
+        if (authStore.activeRole === 'client') {
+          counterpartName = seal.freelancer_id ? (seal.freelancer_name || 'Freelancer') : 'Awaiting Freelancer'
+        } else {
+          counterpartName = seal.client_id ? (seal.client_name || 'Client') : 'Awaiting Client'
+        }
         
         return { 
           id: seal.id, 
           displayId: `SEAL-${shortId}`,
           title: seal.project_name, 
-          // Use the new client_name column for tracking
-          client: seal.client_id 
-             ? (seal.client_name || 'Client Assigned') 
-             : `Awaiting: ${seal.client_name || 'Client'}`, 
+          counterpart: counterpartName, 
           amount: seal.total_amount, 
           status: seal.status, 
-          nextMilestone: getMilestoneMessage(seal.status)
+          nextMilestone: getMilestoneMessage(seal.status, authStore.activeRole)
         }
       })
     }
@@ -60,7 +68,7 @@ const filteredSeals = computed(() => {
   if (!searchQuery.value) return allSeals.value
   return allSeals.value.filter(seal => 
     seal.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-    seal.client.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    seal.counterpart.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     seal.displayId.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
@@ -81,15 +89,27 @@ const getStatusStyles = (status: string) => {
   }
 }
 
-// Generate a helpful subtitle based on the status
-const getMilestoneMessage = (status: string) => {
-  switch(status) {
-    case 'Pending review': return 'Waiting for Client to Accept'
-    case 'Awaiting funding': return 'Waiting for Client Escrow Deposit'
-    case 'In progress': return 'Work Ongoing'
-    case 'Completed': return 'Funds Released'
-    case 'Cancelled': return 'Project Voided'
-    default: return 'Pending Update'
+// Generate a helpful subtitle based on the status AND the user's role
+const getMilestoneMessage = (status: string, role: string) => {
+  if (role === 'client') {
+    switch(status) {
+      case 'Pending review': return 'Action Needed: Review Submitted Work'
+      case 'Awaiting funding': return 'Action Needed: Deposit Funds to Escrow'
+      case 'In progress': return 'Freelancer is working'
+      case 'Completed': return 'Funds Released'
+      case 'Cancelled': return 'Project Voided'
+      default: return 'Pending Update'
+    }
+  } else {
+    // Freelancer messages
+    switch(status) {
+      case 'Pending review': return 'Waiting for Client to Accept'
+      case 'Awaiting funding': return 'Waiting for Client Escrow Deposit'
+      case 'In progress': return 'Work Ongoing'
+      case 'Completed': return 'Funds Released'
+      case 'Cancelled': return 'Project Voided'
+      default: return 'Pending Update'
+    }
   }
 }
 </script>
@@ -102,14 +122,14 @@ const getMilestoneMessage = (status: string) => {
         <h2 class="text-3xl font-bold text-gray-900 tracking-tight">My Seals</h2>
         <p class="text-gray-500 mt-1">Manage your active contracts and pending escrows.</p>
       </div>
-      
       <button 
-        @click="router.push({ name: 'create-seal' })"
-        class="px-5 py-2.5 bg-seal-teal text-white font-bold rounded-xl shadow-sm hover:bg-teal-700 transition-colors flex items-center shrink-0 justify-center"
-      >
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        Make New Seal
-      </button>
+  v-if="authStore.activeRole === 'freelancer'"
+  @click="router.push({ name: 'create-seal' })"
+  class="px-5 py-2.5 bg-seal-teal text-white font-bold rounded-xl shadow-sm hover:bg-teal-700 transition-colors flex items-center shrink-0 justify-center"
+>
+  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+  Make New Seal
+</button>
     </div>
 
     <div class="mb-6 relative max-w-md">
@@ -143,7 +163,13 @@ const getMilestoneMessage = (status: string) => {
           </div>
           
           <h3 class="text-lg font-bold text-gray-900 mb-1 leading-tight">{{ seal.title }}</h3>
-          <p class="text-sm text-gray-500 font-medium mb-4">{{ seal.client }}</p>
+          
+          <p class="text-sm text-gray-500 font-medium mb-4">
+            <span class="text-gray-400 text-xs uppercase tracking-wider block mb-0.5">
+              {{ authStore.activeRole === 'client' ? 'Freelancer' : 'Client' }}
+            </span>
+            {{ seal.counterpart }}
+          </p>
           
           <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
             <p class="text-xs text-gray-500 uppercase tracking-wider font-bold mb-1">Total Amount</p>
@@ -152,8 +178,9 @@ const getMilestoneMessage = (status: string) => {
         </div>
 
         <div class="px-6 py-4 bg-gray-50 border-t border-gray-100">
-          <p class="text-xs text-gray-500 mb-3 flex items-center font-medium">
-            <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p class="text-xs text-gray-500 mb-3 flex items-center font-medium" 
+             :class="{'text-amber-600': seal.nextMilestone.includes('Action Needed')}">
+            <svg class="w-4 h-4 mr-1.5 text-gray-400" :class="{'text-amber-500': seal.nextMilestone.includes('Action Needed')}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             {{ seal.nextMilestone }}
           </p>
           
@@ -172,6 +199,7 @@ const getMilestoneMessage = (status: string) => {
       <p class="text-gray-500 font-medium">No active seals found</p>
       <p class="text-sm text-gray-400 mt-1 mb-4">You don't have any ongoing projects matching that search.</p>
       <button 
+        v-if="authStore.activeRole === 'freelancer'"
         @click="router.push({ name: 'create-seal' })"
         class="text-sm font-bold text-seal-teal hover:underline"
       >

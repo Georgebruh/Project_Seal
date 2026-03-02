@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth' // Import the auth store
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
-const authStore = useAuthStore() // Initialize the store
+const authStore = useAuthStore()
 
 const step = ref(1)
 const phoneNumber = ref('')
 const otpDigits = ref(['', '', '', '', '', ''])
 const otpInputs = ref<HTMLInputElement[]>([])
-const errorMessage = ref('') // Store error messages to display in the UI
+const errorMessage = ref('')
+
+// New state for the direct login toggle
+const selectedRole = ref<'freelancer' | 'client'>('freelancer')
 
 const handleSendOTP = async () => {
-  errorMessage.value = '' // Reset errors
+  errorMessage.value = '' 
   
   if (phoneNumber.value.length >= 10) {
     try {
-      // 1. Check if phone exists in the Profiles table and get the email
       const email = await authStore.checkPhoneExistsAndGetEmail(phoneNumber.value)
       
       if (!email) {
@@ -25,9 +27,8 @@ const handleSendOTP = async () => {
         return
       }
 
-      // 2. Trigger Email OTP 
       await authStore.sendEmailOtp(email)
-      step.value = 2 // Advance to OTP screen
+      step.value = 2 
       
     } catch (error: any) {
       errorMessage.value = error.message || "Failed to send OTP. Please try again."
@@ -38,16 +39,22 @@ const handleSendOTP = async () => {
 }
 
 const handleVerifyOTP = async () => {
-  errorMessage.value = '' // Reset errors
+  errorMessage.value = '' 
   const code = otpDigits.value.join('')
   
   if (code.length === 6) {
     try {
-      // 3. Verify the OTP entered by the user using the new email function
       await authStore.verifyEmailOtp(code)
       
-      // 4. Redirect to Dashboard on success
-      router.push('/dashboard/freelancer')
+      // Tell Pinia which role they selected on the login screen
+      authStore.activeRole = selectedRole.value
+      
+      // Route them to the specific dashboard they requested
+      if (selectedRole.value === 'client') {
+        router.push({ name: 'client-dashboard' })
+      } else {
+        router.push({ name: 'freelancer-dashboard' })
+      }
       
     } catch (error: any) {
       errorMessage.value = error.message || "Invalid OTP code. Please try again."
@@ -85,9 +92,24 @@ const onOtpKeydown = (index: number, event: KeyboardEvent) => {
         <h1 class="title">Login</h1>
 
         <div v-if="step === 1" class="step-container">
-          <p class="subtitle">Enter your phone number to receive a one time password</p>
+          <p class="subtitle">Select your role and enter your phone number.</p>
           
-          <div class="input-section">
+          <div class="flex bg-gray-100 p-1.5 rounded-xl w-full">
+            <button 
+              @click="selectedRole = 'freelancer'"
+              :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', selectedRole === 'freelancer' ? 'bg-white shadow-sm text-[#061E29]' : 'text-gray-500 hover:text-gray-700']"
+            >
+              Freelancer
+            </button>
+            <button 
+              @click="selectedRole = 'client'"
+              :class="['flex-1 py-2 text-sm font-bold rounded-lg transition-all', selectedRole === 'client' ? 'bg-white shadow-sm text-[#061E29]' : 'text-gray-500 hover:text-gray-700']"
+            >
+              Client
+            </button>
+          </div>
+
+          <div class="input-section mt-2">
             <label>Phone Number</label>
             <div class="input-wrapper">
               <input 
