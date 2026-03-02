@@ -166,12 +166,6 @@ const statusInfo = computed<StatusInfo>(() => {
   return (map[seal.value.status as string] || map['Pending review']) as StatusInfo
 })
 
-const depositAmount = computed(() => {
-  if (!seal.value) return 0
-  const percentage = seal.value.deposit_percentage || 100
-  return seal.value.total_amount * (percentage / 100)
-})
-
 const generatedSealLink = computed(() => {
   if (!seal.value) return ''
   return `${window.location.origin}/seal/${seal.value.id}`
@@ -194,9 +188,12 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
   try {
     const { data, error } = await supabase
       .from('Seals')
-      .update({ status: newStatus, ...additionalUpdates })
+      .update({ 
+        status: newStatus, 
+        ...additionalUpdates 
+      })
       .eq('id', seal.value.id)
-      .select() // Force Supabase to return the updated row
+      .select()
 
     if (error) throw error
     
@@ -205,7 +202,6 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
       throw new Error('Update blocked by database security policies (RLS).')
     }
     
-    // Update local state so UI reacts instantly
     seal.value.status = newStatus
     if (additionalUpdates.client_id) seal.value.client_id = additionalUpdates.client_id
     if (additionalUpdates.client_id) await fetchSealDetails()
@@ -359,11 +355,11 @@ const handleBackToList = () => {
             </div>
 
             <div v-else-if="seal.status === 'Awaiting funding'">
-              <p class="text-sm text-gray-600 mb-4">You need to fund the escrow before the freelancer will begin work.</p>
+              <p class="text-sm text-gray-600 mb-4">Deposit the project funds to officially begin. The freelancer will start working as soon as the payment is secured.</p>
               <div class="bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
                 <div class="flex justify-between font-bold text-gray-900">
-                  <span>Due to Escrow</span>
-                  <span class="text-lg text-seal-teal">₱{{ depositAmount.toLocaleString() }}</span>
+                  <span>Amount Due</span>
+                  <span class="text-lg text-seal-teal">₱{{ seal.total_amount.toLocaleString() }}</span>
                 </div>
               </div>
               <button @click="proceedToPayment" class="w-full py-3.5 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold shadow-sm transition-colors flex justify-center items-center">
