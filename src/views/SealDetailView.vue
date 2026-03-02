@@ -11,6 +11,7 @@ const authStore = useAuthStore()
 const sealId = route.params.id as string
 
 const isLoading = ref(true)
+const isProcessingPayment = ref(false) // NEW: Added for payment loading state
 const seal = ref<any>(null)
 const freelancerName = ref('Loading...')
 const clientName = ref('Awaiting Client')
@@ -125,7 +126,9 @@ interface StatusInfo {
 }
 
 const statusInfo = computed<StatusInfo>(() => {
-  if (!seal.value) return { label: '', color: '', icon: '', progress: '' }
+  if (!seal.value) {
+    return { label: '', color: '', icon: '', progress: '' }
+  }
   
   const map: Record<string, StatusInfo> = {
     'Pending review': { 
@@ -205,8 +208,6 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
     // Update local state so UI reacts instantly
     seal.value.status = newStatus
     if (additionalUpdates.client_id) seal.value.client_id = additionalUpdates.client_id
-    
-    // Refresh names just in case
     if (additionalUpdates.client_id) await fetchSealDetails()
     
   } catch (error: any) {
@@ -215,7 +216,6 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
   }
 }
 
-// Client Actions
 const clientAcceptContract = async () => {
   await updateSealStatus('Awaiting funding', { client_id: authStore.user.id })
 }
