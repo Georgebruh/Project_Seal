@@ -8,11 +8,18 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const isLoading = ref(true)
-const dashboardData = ref<ClientDashboardData | null>(null)
+const dashboardData = ref<ClientDashboardData | null>(null) 
 
 onMounted(async () => {
   try {
-    dashboardData.value = await getClientDashboardData()
+    const userId = authStore.user?.id;  
+    if (!userId) {
+      console.warn("User ID not found. Ensure the user is logged in.");
+
+      return;
+    }
+
+    dashboardData.value = await getClientDashboardData(userId)
   } catch (error) {
     console.error('Error fetching client dashboard data:', error)
   } finally {
@@ -21,9 +28,19 @@ onMounted(async () => {
 })
 
 // Navigation Handlers
-const goToActiveSeals = () => router.push('/my-seals?tab=active')
-const goToPendingReview = () => router.push('/my-seals?tab=review')
-const goToSealDetail = (id: number) => router.push(`/dashboard/seal/${id}`)
+const goToActiveSeals = () => {
+  router.push({ name: 'my-seals', query: { tab: 'active' } })
+}
+
+const goToPendingReview = () => {
+  router.push({ name: 'my-seals', query: { tab: 'review' } })
+}
+const goToSealDetail = (id: number) => {
+  router.push({ 
+    name: 'seal-detail', // The name defined in your router config
+    params: { id: id.toString() } 
+  })
+}
 </script>
 
 <template>
@@ -128,8 +145,8 @@ const goToSealDetail = (id: number) => router.push(`/dashboard/seal/${id}`)
 
         <div class="p-4 border-t border-white/40 bg-white/30 text-center">
           <button 
-            @click="goToActiveSeals"
-            class="text-sm font-semibold text-blue-700 hover:text-blue-800 transition-colors"
+            @click="router.push({ name: 'my-seals' })"
+            class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
           >
             View All Seals
           </button>

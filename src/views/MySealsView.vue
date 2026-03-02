@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
+
 const isLoading = ref(true)
 const searchQuery = ref('')
-
-// Real Data container
 const allSeals = ref<any[]>([])
 
 onMounted(async () => {
@@ -20,10 +20,10 @@ onMounted(async () => {
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw new Error('User not authenticated')
 
-    // 2. Dynamically choose which column to query based on the active role
+    // 2. Query based on role
     const roleColumn = authStore.activeRole === 'client' ? 'client_id' : 'freelancer_id'
 
-    // 3. Fetch seals for this user
+    // 3. Fetch seals
     const { data: sealsData, error: sealsError } = await supabase
       .from('Seals')
       .select('*')
@@ -32,12 +32,11 @@ onMounted(async () => {
 
     if (sealsError) throw sealsError
 
-    // 4. Map the database data to your UI structure
+    // 4. Map to UI structure
     if (sealsData) {
       allSeals.value = sealsData.map(seal => {
         const shortId = seal.id.substring(0, 8).toUpperCase()
         
-        // Determine the "other person" in the transaction
         let counterpartName = ''
         if (authStore.activeRole === 'client') {
           counterpartName = seal.freelancer_id ? (seal.freelancer_name || 'Freelancer') : 'Awaiting Freelancer'
@@ -63,13 +62,27 @@ onMounted(async () => {
   }
 })
 
-// Search filter logic
+
 const filteredSeals = computed(() => {
-  if (!searchQuery.value) return allSeals.value
-  return allSeals.value.filter(seal => 
-    seal.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
-    seal.counterpart.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    seal.displayId.toLowerCase().includes(searchQuery.value.toLowerCase())
+  
+  let list = [...allSeals.value]
+
+ 
+  const activeTab = route.query.tab
+  if (activeTab === 'active') {
+    list = list.filter(seal => seal.status === 'In progress')
+  } else if (activeTab === 'review') {
+    list = list.filter(seal => seal.status === 'Awaiting funding')
+  }
+
+  
+  if (!searchQuery.value.trim()) return list
+  
+  const search = searchQuery.value.toLowerCase()
+  return list.filter(seal => 
+    seal.title.toLowerCase().includes(search) || 
+    seal.counterpart.toLowerCase().includes(search) ||
+    seal.displayId.toLowerCase().includes(search)
   )
 })
 
@@ -89,7 +102,6 @@ const getStatusStyles = (status: string) => {
   }
 }
 
-// Generate a helpful subtitle based on the status AND the user's role
 const getMilestoneMessage = (status: string, role: string) => {
   if (role === 'client') {
     switch(status) {
@@ -101,7 +113,6 @@ const getMilestoneMessage = (status: string, role: string) => {
       default: return 'Pending Update'
     }
   } else {
-    // Freelancer messages
     switch(status) {
       case 'Pending review': return 'Waiting for Client to Accept'
       case 'Awaiting funding': return 'Waiting for Client Escrow Deposit'
@@ -116,7 +127,6 @@ const getMilestoneMessage = (status: string, role: string) => {
 
 <template>
   <div class="max-w-6xl mx-auto pb-12">
-    
     <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h2 class="text-3xl font-bold text-gray-900 tracking-tight">My Seals</h2>
@@ -129,6 +139,15 @@ const getMilestoneMessage = (status: string, role: string) => {
       >
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Make New Seal
+      </button>
+    </div>
+
+    <div v-if="route.query.tab" class="mb-4 flex items-center gap-2 bg-blue-50 border border-blue-100 p-2 rounded-lg w-fit">
+      <span class="text-sm text-blue-700 font-medium">
+        Filtering: <strong>{{ route.query.tab === 'active' ? 'In Progress' : 'Pending Review' }}</strong>
+      </span>
+      <button @click="router.push({ name: 'my-seals' })" class="text-xs font-bold text-blue-800 hover:underline ml-2">
+        ✕ Show All
       </button>
     </div>
 
@@ -186,7 +205,6 @@ const getMilestoneMessage = (status: string, role: string) => {
             <svg class="w-4 h-4 mr-1.5 text-gray-500" :class="{'text-amber-500': seal.nextMilestone.includes('Action Needed')}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             {{ seal.nextMilestone }}
           </p>
-          
           <button 
             @click="router.push({ name: 'seal-detail', params: { id: seal.id } })"
             class="w-full py-2 bg-white/60 backdrop-blur-sm border border-white/60 text-gray-800 hover:text-seal-teal hover:border-seal-teal hover:bg-white/90 font-bold rounded-lg transition-all text-sm shadow-sm"
@@ -211,6 +229,5 @@ const getMilestoneMessage = (status: string, role: string) => {
         + Create a new seal
       </button>
     </div>
-
   </div>
 </template>
