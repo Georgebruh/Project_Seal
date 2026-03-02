@@ -11,22 +11,16 @@ const sealLink = ref('')
 const showLink = ref(false)
 const linkPressed = ref(false)
 
-// Form Data State - Removed the manual slug
+// Form Data State - Removed deposit_percentage, milestone_phases, and terms
 const form = ref({
   project_name: '',
   total_amount: null as number | null,
   service_fee: 0,
-  terms: {
-    condition: 'completion',
-    notes: ''
-  },
   status: 'Pending review',
   project_type: 'Web Development',
   scope: '',
   contract_template: 'Standard Service Agreement',
   contract_text: '',
-  deposit_percentage: 50,
-  milestone_phases: 2,
   start_date: '',
   end_date: '',
   client_name: ''
@@ -46,14 +40,10 @@ starting on ${form.value.start_date || '[Start Date]'} and concluding on ${form.
 1. SCOPE OF WORK: 
 ${form.value.scope || '[Scope details will appear here]'}
 
-2. COMPENSATION: 
+2. COMPENSATION & PAYMENT TERMS: 
 The total compensation for this project is ₱${form.value.total_amount || '0.00'}.
-A deposit of ${form.value.deposit_percentage}% (₱${((form.value.total_amount || 0) * (form.value.deposit_percentage / 100)).toFixed(2)}) is required to begin work.
-
-3. PAYMENT TERMS: 
-${form.value.terms.condition === 'completion' 
-  ? 'The remaining balance shall be paid in full upon project completion.' 
-  : `The remaining balance shall be paid across ${form.value.milestone_phases} project milestones.`}
+The full amount (100%) is required to be deposited into the secure platform escrow to begin work.
+The funds shall be released in full to the freelancer upon project completion and client approval.
   
 By accepting this Seal, both parties agree to the terms outlined above and the platform escrow conditions.
   `.trim()
@@ -67,11 +57,9 @@ const validateStep1 = () => {
   if (!form.value.client_name.trim()) { errors.value.client_name = 'Client name is required.'; isValid = false }
   if (!form.value.scope.trim()) { errors.value.scope = 'Scope and deliverables are required.'; isValid = false }
   if (!form.value.total_amount || form.value.total_amount <= 0) { errors.value.total_amount = 'Please enter a valid total amount.'; isValid = false }
-  if (form.value.deposit_percentage === null || form.value.deposit_percentage < 0 || form.value.deposit_percentage > 100) { errors.value.deposit_percentage = 'Deposit must be between 0 and 100%.'; isValid = false }
   if (!form.value.start_date) { errors.value.start_date = 'Start date is required.'; isValid = false }
   if (!form.value.end_date) { errors.value.end_date = 'End date is required.'; isValid = false } 
   else if (form.value.start_date && form.value.end_date < form.value.start_date) { errors.value.end_date = 'End date cannot be before start date.'; isValid = false }
-  if (form.value.terms.condition === 'milestone' && (!form.value.milestone_phases || form.value.milestone_phases < 2)) { errors.value.milestone_phases = 'At least 2 phases required.'; isValid = false }
 
   return isValid
 }
@@ -118,7 +106,6 @@ const submitSeal = async () => {
     service_fee: form.value.total_amount ? (form.value.total_amount * 0.05).toFixed(2) : 0 
   }
 
-  // 1. Insert and instantly return the auto-generated UUID
   const { data: newSeal, error: insertError } = await supabase
     .from('Seals')
     .insert(payload)
@@ -132,10 +119,8 @@ const submitSeal = async () => {
     return
   } 
 
-  // 2. Generate the shareable link using the real database UUID
   sealLink.value = `${window.location.origin}/seal/${newSeal.id}`
   
-  // 3. Update the database to store the link
   await supabase
     .from('Seals')
     .update({ shareable_link: sealLink.value })
@@ -224,28 +209,12 @@ const submitSeal = async () => {
 
       <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
         <h3 class="text-lg font-bold text-gray-900 mb-4 border-b border-gray-50 pb-2">Pricing & Payments</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 gap-5">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Total Amount (₱) <span class="text-red-500">*</span></label>
             <input v-model="form.total_amount" type="number" placeholder="50000" :class="['w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 transition-colors', errors.total_amount ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-teal-500 focus:ring-teal-500/50']" />
             <p v-if="errors.total_amount" class="mt-1 text-xs text-red-500">{{ errors.total_amount }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Upfront Deposit (%) <span class="text-red-500">*</span></label>
-            <input v-model="form.deposit_percentage" type="number" min="0" max="100" :class="['w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 transition-colors', errors.deposit_percentage ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-teal-500 focus:ring-teal-500/50']" />
-            <p v-if="errors.deposit_percentage" class="mt-1 text-xs text-red-500">{{ errors.deposit_percentage }}</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
-            <select v-model="form.terms.condition" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors">
-              <option value="completion">Upon Completion</option>
-              <option value="milestone">By Milestone</option>
-            </select>
-          </div>
-          <div v-if="form.terms.condition === 'milestone'">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Number of Phases <span class="text-red-500">*</span></label>
-            <input v-model="form.milestone_phases" type="number" min="2" max="10" :class="['w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 transition-colors', errors.milestone_phases ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-teal-500 focus:ring-teal-500/50']" />
-            <p v-if="errors.milestone_phases" class="mt-1 text-xs text-red-500">{{ errors.milestone_phases }}</p>
+            <p class="text-xs text-gray-500 mt-2">100% of this amount will be securely held in escrow until you complete the project.</p>
           </div>
         </div>
       </div>
@@ -290,8 +259,6 @@ const submitSeal = async () => {
               <div class="flex justify-between"><span class="text-gray-500">Name:</span> <span class="font-medium text-gray-900">{{ form.project_name }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Type:</span> <span class="font-medium text-gray-900">{{ form.project_type }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Total:</span> <span class="text-gray-900 font-bold">₱{{ form.total_amount }}</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Deposit:</span> <span class="font-medium text-gray-900">{{ form.deposit_percentage }}%</span></div>
-              <div class="flex justify-between"><span class="text-gray-500">Terms:</span> <span class="font-medium text-gray-900 capitalize">{{ form.terms.condition }}</span></div>
               <div class="flex justify-between"><span class="text-gray-500">Dates:</span> <span class="font-medium text-gray-900">{{ form.start_date }} to {{ form.end_date }}</span></div>
             </div>
             <button @click="prevStep" class="w-full mt-6 py-2 border border-gray-200 text-gray-600 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm">
