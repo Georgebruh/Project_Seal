@@ -149,6 +149,12 @@ const statusInfo = computed<StatusInfo>(() => {
       icon: 'M13 10V3L4 14h7v7l9-11h-7z',
       progress: '100%'
     },
+    'Pending output review': { 
+      label: 'Output Submitted for Review', 
+      color: 'bg-purple-50 text-purple-700 border-purple-200',
+      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+      progress: '100%'
+    },
     'Completed': { 
       label: 'Completed & Funds Released', 
       color: 'bg-green-50 text-green-700 border-green-200',
@@ -218,6 +224,12 @@ const clientAcceptContract = async () => {
 
 const proceedToPayment = () => {
   router.push(`/pay/${seal.value.id}`)
+}
+
+const freelancerSubmitWork = async () => {
+  if(confirm('Have you delivered the final files to the client? Click OK to update the status and request fund release.')) {
+    await updateSealStatus('Pending output review')
+  }
 }
 
 const clientApproveWork = async () => {
@@ -373,7 +385,15 @@ const handleBackToList = () => {
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
               <p class="font-medium text-gray-900">Freelancer is working.</p>
-              <p class="text-sm text-gray-500 mt-1 mb-4">Escrow is fully funded. Once you receive and verify the final files, approve the work to release funds.</p>
+              <p class="text-sm text-gray-500 mt-1 mb-4">Escrow is fully funded. Please wait for the freelancer to submit the final output.</p>
+            </div>
+            
+            <div v-else-if="seal.status === 'Pending output review'" class="text-center py-4">
+              <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <p class="font-medium text-gray-900">Output Submitted!</p>
+              <p class="text-sm text-gray-500 mt-1 mb-4">The freelancer has marked the work as complete. Once you receive and verify the final files, approve the work to release funds.</p>
               <button @click="clientApproveWork" class="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm transition-colors">
                 Approve Work & Release Funds
               </button>
@@ -406,7 +426,18 @@ const handleBackToList = () => {
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               </div>
               <p class="font-medium text-gray-900">Escrow Funded</p>
-              <p class="text-sm text-gray-500 mt-1">You may begin work safely. Deliver the final files directly to your client. They will release the funds from here.</p>
+              <p class="text-sm text-gray-500 mt-1 mb-4">You may begin work safely. Deliver the final files directly to your client, then mark the output as submitted.</p>
+              <button @click="freelancerSubmitWork" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-sm transition-colors">
+                Mark Work as Submitted
+              </button>
+            </div>
+
+            <div v-else-if="seal.status === 'Pending output review'" class="text-center py-4">
+              <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <p class="font-medium text-gray-900">Awaiting Client Approval</p>
+              <p class="text-sm text-gray-500 mt-1">You have submitted the work. The client must now review the files and release the funds.</p>
             </div>
 
             <div v-else-if="seal.status === 'Completed'" class="text-center py-4 text-green-600 font-bold">

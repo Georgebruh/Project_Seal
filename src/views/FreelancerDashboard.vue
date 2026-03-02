@@ -22,6 +22,7 @@ const getStatusColor = (status: string) => {
     case 'Pending review': return 'bg-amber-100 text-amber-700'
     case 'Awaiting funding': return 'bg-blue-100 text-blue-700'
     case 'In progress': return 'bg-indigo-100 text-indigo-700'
+    case 'Pending output review': return 'bg-purple-100 text-purple-700'
     default: return 'bg-gray-100 text-gray-700'
   }
 }
