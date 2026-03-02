@@ -161,11 +161,6 @@ const onOtpKeydown = (index: number, event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-* {
-  font-family: 'Inter', sans-serif;
-}
 
 .auth-wrapper {
   display: flex;

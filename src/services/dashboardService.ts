@@ -61,7 +61,6 @@ export const getFreelancerSeals = async (): Promise<SealData[]> => {
 
 //still a simualation for client dashbbpard
 
-// Add these interfaces to your dashboardService.ts
 export interface ClientSealData {
   id: number;
   title: string;
