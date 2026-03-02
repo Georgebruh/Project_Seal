@@ -99,7 +99,8 @@ onMounted(async () => {
 
       activeProjectsData.value = {
         total: activeSealsRes.data.length,
-        nearDeadline: nearDeadlineList
+        // .slice(0, 3) ensures it never returns more than 3 items
+        nearDeadline: nearDeadlineList.slice(0, 3)
       }
     }
 
