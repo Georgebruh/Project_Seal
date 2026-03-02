@@ -1,28 +1,61 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { supabase } from '@/supabase'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const isLoading = ref(true)
 
-// Mock Data for past projects
 const historyRecords = ref<any[]>([])
 const searchQuery = ref('')
-const filterStatus = ref('all') // all, completed, cancelled
+const filterStatus = ref('all') 
 
-onMounted(() => {
-  // Simulate fetching history from Supabase
-  setTimeout(() => {
-    historyRecords.value = [
-      { id: 'SEAL-092', title: 'E-Commerce Website Redesign', client: 'Acme Corp', dateCompleted: 'Oct 15, 2025', amount: 45000, status: 'completed' },
-      { id: 'SEAL-085', title: 'Brand Logo & Animation', client: 'TechStart Inc.', dateCompleted: 'Sep 28, 2025', amount: 15000, status: 'completed' },
-      { id: 'SEAL-081', title: 'SEO Technical Audit', client: 'Local Bakery', dateCompleted: 'Aug 10, 2025', amount: 8000, status: 'cancelled' },
-      { id: 'SEAL-077', title: 'Mobile App Wireframes', client: 'Sarah Designs', dateCompleted: 'Jul 22, 2025', amount: 25000, status: 'completed' },
-      { id: 'SEAL-070', title: 'Database Migration', client: 'DataSync LLC', dateCompleted: 'Jun 05, 2025', amount: 35000, status: 'completed' },
-    ]
+onMounted(async () => {
+  try {
+    isLoading.value = true
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) throw new Error('User not authenticated')
+
+    const roleColumn = authStore.activeRole === 'client' ? 'client_id' : 'freelancer_id'
+
+    const { data, error } = await supabase
+      .from('Seals')
+      .select('*') // We use * to mirror MySealsView and prevent column mismatch crashes
+      .eq(roleColumn, user.id)
+      .in('status', ['Completed', 'Cancelled'])
+      .order('created_at', { ascending: false }) // We use created_at as a perfectly safe fallback for sorting
+
+    if (error) throw error
+
+    if (data) {
+      historyRecords.value = data.map(record => {
+        let counterpartName = ''
+        if (authStore.activeRole === 'client') {
+          counterpartName = record.freelancer_name || 'Freelancer'
+        } else {
+          counterpartName = record.client_name || 'Client'
+        }
+
+        return {
+          id: `SEAL-${record.id.substring(0, 8).toUpperCase()}`,
+          rawId: record.id,
+          title: record.project_name,
+          client: counterpartName,
+          // Safely fallback through available dates so it never breaks
+          dateCompleted: new Date(record.updated_at || record.end_date || record.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          amount: record.total_amount,
+          status: record.status.toLowerCase()
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching history:', error)
+  } finally {
     isLoading.value = false
-  }, 600)
+  }
 })
 
-// Filter logic
 const filteredHistory = computed(() => {
   return historyRecords.value.filter(record => {
     const matchesSearch = record.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
@@ -34,7 +67,7 @@ const filteredHistory = computed(() => {
 })
 
 const formatCurrency = (amount: number) => {
-  return `₱${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`
+  return `₱${Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
 }
 
 // Map the statuses to UI colors (slightly tweaked for glass)

@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
-import { getFreelancerMetrics } from '@/services/dashboardService'
 
 const router = useRouter()
 
@@ -18,7 +17,6 @@ const transactionsData = ref([] as any[])
 // Real Seals Data
 const activeSealsList = ref<any[]>([])
 
-// Helper function to match your UI colors
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'Pending review': return 'bg-amber-100 text-amber-700'
@@ -28,25 +26,17 @@ const getStatusColor = (status: string) => {
   }
 }
 
-// Fetch data when the component loads
 onMounted(async () => {
   try {
     isLoading.value = true
 
-    // 1. Get the securely authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
     if (userError || !user) throw new Error('User not authenticated')
 
-    // 2. Fetch Profile, Active Seals, and Completed Seals concurrently
-    const [profileRes, activeSealsRes, completedSealsRes, metrics] = await Promise.all([
-      supabase
-        .from('Profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single(),
+    // Fetch Profile, Active Seals, Completed Seals, and Recent Transactions concurrently
+    const [profileRes, activeSealsRes, completedSealsRes, recentTransactionsRes] = await Promise.all([
+      supabase.from('Profiles').select('full_name').eq('id', user.id).single(),
       
-      // Fetch Active Seals (added end_date for deadline calculation)
       supabase
         .from('Seals')
         .select('id, project_name, project_type, start_date, end_date, total_amount, status')
@@ -55,41 +45,39 @@ onMounted(async () => {
         .neq('status', 'Cancelled')
         .order('created_at', { ascending: false }),
 
-      // Fetch Completed Seals (for Total Earnings calculation)
       supabase
         .from('Seals')
         .select('total_amount, end_date')
         .eq('freelancer_id', user.id)
         .eq('status', 'Completed'),
         
-      getFreelancerMetrics() // Keeping for the mock transactions
+      // NEW: Fetch the 2 most recently updated seals
+      supabase
+        .from('Seals')
+        .select('id, project_name, status, updated_at')
+        .eq('freelancer_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(2)
     ])
 
-    // --- HANDLE PROFILE NAME ---
     if (profileRes.data && profileRes.data.full_name) {
       freelancerName.value = profileRes.data.full_name.split(' ')[0]
     }
 
-    // --- SETUP DATES FOR CALCULATIONS ---
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
     const threeDaysFromNow = new Date(today)
     threeDaysFromNow.setDate(today.getDate() + 3)
-    
     const currentMonth = today.getMonth()
     const currentYear = today.getFullYear()
 
-    // --- PROCESS ACTIVE SEALS & DEADLINES ---
     if (activeSealsRes.data) {
       const nearDeadlineList: any[] = []
 
       activeSealsList.value = activeSealsRes.data.map(seal => {
-        // Calculate Deadlines
         if (seal.end_date) {
           const endDate = new Date(seal.end_date)
           endDate.setHours(0, 0, 0, 0)
-          
           if (endDate >= today && endDate <= threeDaysFromNow) {
             nearDeadlineList.push({
               id: seal.id,
@@ -98,8 +86,6 @@ onMounted(async () => {
             })
           }
         }
-
-        // Map data for the UI list
         return {
           id: seal.id,
           title: seal.project_name,
@@ -111,22 +97,19 @@ onMounted(async () => {
         }
       })
 
-      // Update the Active Projects metrics box
       activeProjectsData.value = {
         total: activeSealsRes.data.length,
-        nearDeadline: nearDeadlineList
+        // .slice(0, 3) ensures it never returns more than 3 items
+        nearDeadline: nearDeadlineList.slice(0, 3)
       }
     }
 
-    // --- PROCESS COMPLETED SEALS (EARNINGS) ---
     if (completedSealsRes.data) {
       let totalEarnings = 0
       let completedThisMonthCount = 0
 
       completedSealsRes.data.forEach(seal => {
         totalEarnings += Number(seal.total_amount || 0)
-        
-        // Count if completed this month based on the end_date
         if (seal.end_date) {
           const endDate = new Date(seal.end_date)
           if (endDate.getMonth() === currentMonth && endDate.getFullYear() === currentYear) {
@@ -135,7 +118,6 @@ onMounted(async () => {
         }
       })
 
-      // Update the Earnings metrics box
       earningsData.value = {
         amount: `₱${totalEarnings.toLocaleString()}`,
         trend: 'Up to date',
@@ -143,8 +125,18 @@ onMounted(async () => {
       }
     }
 
-    // Assign mock transaction data (until you build out the Transactions table)
-    transactionsData.value = metrics.transactions
+    // NEW: Map real recent transactions to the UI
+    if (recentTransactionsRes.data) {
+      transactionsData.value = recentTransactionsRes.data.map(tx => {
+        const date = new Date(tx.updated_at || new Date())
+        return {
+          id: tx.id,
+          projectId: tx.id,
+          message: `${tx.project_name} updated to ${tx.status}`,
+          time: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        }
+      })
+    }
     
   } catch (error) {
     console.error("Failed to load dashboard data:", error)
@@ -260,8 +252,8 @@ onMounted(async () => {
       </div>
 
       <div v-else-if="activeSealsList.length === 0" class="p-8 text-center">
-        <p class="text-gray-600 font-medium text-sm mb-4">You don't have any active seals right now.</p>
-        <button @click="router.push('/create-seal')" class="bg-seal-teal text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-600 shadow-md transition-colors">
+        <p class="text-gray-500 text-sm mb-4">You don't have any active seals right now.</p>
+        <button @click="router.push({ name: 'create-seal' })" class="bg-seal-teal text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-600 transition-colors">
           Create a New Seal
         </button>
       </div>
