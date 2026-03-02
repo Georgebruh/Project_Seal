@@ -190,10 +190,10 @@ const goToSealDetail = (id: string) => router.push(`/seal/${id}`)
 
         <div class="p-4 border-t border-white/40 bg-white/30 text-center">
           <button 
-            @click="router.push({ name: 'my-seals' })"
+            @click="router.push('/dashboard/my-seals')"
             class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
           >
-            View All Seals
+            View All
           </button>
         </div>
       </div>
