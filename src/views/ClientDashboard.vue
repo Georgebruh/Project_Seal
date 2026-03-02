@@ -12,7 +12,14 @@ const dashboardData = ref<ClientDashboardData | null>(null)
 
 onMounted(async () => {
   try {
-    dashboardData.value = await getClientDashboardData()
+    const userId = authStore.user?.id; 
+    if (!userId) {
+      console.warn("User ID not found. Ensure the user is logged in.");
+      // Optional: router.push('/login')
+      return;
+    }
+
+    dashboardData.value = await getClientDashboardData(userId)
   } catch (error) {
     console.error('Error fetching client dashboard data:', error)
   } finally {

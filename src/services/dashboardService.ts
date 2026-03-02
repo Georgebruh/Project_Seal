@@ -1,4 +1,4 @@
-// These interfaces tell TypeScript exactly what the data should look like
+import {supabase} from '@/supabase'
 export interface MetricData {
   amount: string;
   trend: string;
@@ -82,31 +82,69 @@ export interface ClientDashboardData {
   pendingReview: MetricSummary;
   sealsList: ClientSealData[];
 }
+export const getClientDashboardData = async (userId: string): Promise<ClientDashboardData> => {
+  // We select columns from 'seals' AND the 'full_name' from the related 'Profiles'
+  // Note: 'Profiles' must have a foreign key relationship with 'seals'
+  const { data, error } = await supabase
+    .from('Seals')
+    .select(`
+      *,
+      Profiles:freelancer_id (
+        full_name
+      )
+    `)
+    .eq('client_id', userId)
+    .order('created_at', { ascending: false });
 
-export const getClientDashboardData = async (): Promise<ClientDashboardData> => {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  if (error) throw error;
+
+  // Handle empty state
+  if (!data || data.length === 0) {
+    return {
+      activeSeals: { total: 0, top: [] },
+      pendingReview: { total: 0, top: [] },
+      sealsList: []
+    };
+  }
+
   return {
     activeSeals: {
-      total: 3,
-      top: [
-        { id: 201, title: 'E-commerce Site', freelancerName: 'Alex Rivera' },
-        { id: 204, title: 'SEO Audit', freelancerName: 'Maria Santos' }
-      ]
+      total: data.filter(s => s.status === 'In Progress').length,
+      top: data.filter(s => s.status === 'In Progress').slice(0, 2).map(s => ({
+        id: s.id,
+        title: s.title,
+        // Accessing the joined table data
+        freelancerName: s.Profiles?.full_name || 'Unknown Freelancer'
+      }))
     },
     pendingReview: {
-      total: 2,
-      top: [
-        { id: 202, title: 'Brand Assets', freelancerName: 'John Doe' },
-        { id: 205, title: 'Mobile App Mockups', freelancerName: 'Sarah Lee' }
-      ]
+      total: data.filter(s => s.status === 'Pending Review').length,
+      top: data.filter(s => s.status === 'Pending Review').slice(0, 2).map(s => ({
+        id: s.id,
+        title: s.title,
+        freelancerName: s.Profiles?.full_name || 'Unknown Freelancer'
+      }))
     },
-    sealsList: [
-      { id: 201, title: 'E-commerce Site', freelancerName: 'Alex Rivera', date: 'Mar 05, 2026', amount: '₱30,000', status: 'In Progress', statusBg: 'bg-blue-100 text-blue-700' },
-      { id: 202, title: 'Brand Assets', freelancerName: 'John Doe', date: 'Feb 28, 2026', amount: '₱15,000', status: 'Pending Review', statusBg: 'bg-purple-100 text-purple-700' },
-      { id: 203, title: 'SEO Optimization', freelancerName: 'Jane Smith', date: 'Mar 10, 2026', amount: '₱10,000', status: 'Awaiting Funding', statusBg: 'bg-amber-100 text-amber-700' },
-      { id: 206, title: 'Landing Page Copy', freelancerName: 'Mark Wilson', date: 'Feb 15, 2026', amount: '₱5,000', status: 'Completed', statusBg: 'bg-emerald-100 text-emerald-700' }
-    ]
+    sealsList: data.map(s => ({
+      id: s.id,
+      title: s.title,
+      freelancerName: s.Profiles?.full_name || 'Unknown Freelancer',
+      date: s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A',      
+      amount: `₱${(s.total_amount ?? 0).toLocaleString()}`,
+      status: s.status,
+      statusBg: getStatusColor(s.status)
+    }))
   };
+};
+
+// Helper to keep logic out of the component
+const getStatusColor = (status: string): string => {
+  const map: Record<string, string> = {
+    'In Progress': 'bg-blue-100 text-blue-700',
+    'Pending Review': 'bg-purple-100 text-purple-700',
+    'Completed': 'bg-emerald-100 text-emerald-700',
+    'Awaiting Funding': 'bg-amber-100 text-amber-700'
+  };
+  
+  return map[status] || 'bg-gray-100 text-gray-700';
 };
