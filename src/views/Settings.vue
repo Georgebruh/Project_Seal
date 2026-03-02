@@ -38,17 +38,17 @@ const handleLogoutAll = () => {
 </script>
 
 <template>
-  <div class="p-6 md:p-10 bg-[#e8f1f2] min-h-screen font-sans text-slate-800">
+  <div class="max-w-4xl mx-auto font-sans text-slate-800">
     
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-slate-900">Account Settings</h1>
+      <h1 class="text-3xl font-bold text-slate-900 dark:text-white transition-colors duration-300">Account Settings</h1>
       <p class="text-slate-500 mt-1">Manage your notifications, security, and app preferences.</p>
     </div>
 
     <div class="max-w-4xl grid grid-cols-1 gap-8">
       
-      <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-        <h2 class="text-xl font-bold text-slate-900 mb-1">Notification Preferences</h2>
+      <section class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 transition-colors duration-300">
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-1">Notification Preferences</h2>
         <p class="text-sm text-slate-500 mb-6">Control how Project Seal alerts you about your transactions.</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

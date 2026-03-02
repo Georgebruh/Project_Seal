@@ -17,13 +17,13 @@ const hasAnyNotification = computed(() => hasNotifications.value || hasSettingsN
 </script>
 
 <template>
-  <div class="flex h-screen bg-seal-light font-sans text-seal-dark">
+  <div class="flex h-screen bg-seal-light dark:bg-slate-900 font-sans text-seal-dark dark:text-gray-100 transition-colors duration-300">
     
     <Sidebar :isCollapsed="isSidebarCollapsed" />
 
     <div class="flex-1 flex flex-col overflow-hidden relative">
       
-      <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
+      <header class="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-6 shrink-0 z-10 transition-colors duration-300">
         <div class="flex items-center space-x-4">
           
           <button 
@@ -87,13 +87,13 @@ const hasAnyNotification = computed(() => hasNotifications.value || hasSettingsN
               <span v-if="hasNotifications" class="block h-2.5 w-2.5 rounded-full bg-red-500"></span>
             </RouterLink>
 
-            <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between">
+            <RouterLink :to="{ name: 'settings' }" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-between">
               <div class="flex items-center space-x-3">
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span>Settings</span>
               </div>
               <span v-if="hasSettingsNotif" class="block h-2.5 w-2.5 rounded-full bg-red-500"></span>
-            </button>
+            </RouterLink>
             
             <div class="border-t border-gray-100 my-1"></div>
             
