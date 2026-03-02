@@ -237,13 +237,9 @@ const freelancerCancel = async () => {
 }
 
 const handleBackToList = () => {
-  // Check if Vue Router has an internal back state
-  if (window.history.state && window.history.state.back) {
-    router.back()
-  } else {
-    // If no app history (direct link / new tab), push to the unified list
-    router.push({ name: 'my-seals' })
-  }
+  // Absolutely no history checks. 
+  // Always push strictly forward to the dashboard to fetch fresh data.
+  router.push({ name: 'my-seals' })
 }
 
 </script>

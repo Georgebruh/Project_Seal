@@ -161,10 +161,10 @@ const handlePayMongoCheckout = async () => {
       <div class="flex flex-col sm:flex-row gap-4">
         
         <button 
-          @click="router.push(`/seal/${transaction.id}`)"
+          @click="router.back()"
           class="flex-1 py-4 bg-white border-2 border-gray-200 text-gray-700 hover:border-seal-teal hover:text-seal-teal rounded-xl font-bold transition-colors text-center shadow-sm"
         >
-          View More
+          Back to Seal
         </button>
 
         <button 
