@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar.vue'
 import profilePicture from '@/assets/PFPFOREVERYONE.png'
 
 const authStore = useAuthStore()
-const router = useRouter() // Added router
+const router = useRouter()
 
 const isSidebarCollapsed = ref(true)
 const isProfileDropdownOpen = ref(false)
@@ -14,7 +14,6 @@ const hasNotifications = ref(true)
 const hasSettingsNotif = ref(false)
 
 const hasAnyNotification = computed(() => hasNotifications.value || hasSettingsNotif.value)
-
 
 const dashboardRoute = computed(() => {
   return authStore.activeRole === 'client' 
@@ -26,28 +25,19 @@ const dashboardRoute = computed(() => {
 <template>
   <div class="flex h-screen bg-transparent font-sans text-seal-dark">
     
-    <Sidebar :isCollapsed="isSidebarCollapsed" />
+    <Sidebar 
+      :isCollapsed="isSidebarCollapsed" 
+      class="shadow-[4px_0_30px_rgba(0,0,0,0.15)] drop-shadow-2xl border-r border-gray-200/50"
+      style="z-index: 50;"
+    />
 
-    <div class="flex-1 flex flex-col overflow-hidden relative">
+    <div class="flex-1 flex flex-col overflow-hidden relative z-0">
       
-      <header class="h-16 bg-white/80 backdrop-blur-md border-b border-white/50 shadow-sm flex items-center justify-between px-6 shrink-0 z-10">
-        <div class="flex items-center space-x-4">
-          
-          <button 
-            @click="isSidebarCollapsed = !isSidebarCollapsed" 
-            class="p-2 bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm rounded-lg text-gray-500 hover:text-seal-teal transition-all focus:outline-none flex items-center justify-center hover:shadow"
-            :title="isSidebarCollapsed ? 'Open Sidebar' : 'Close Sidebar'"
-          >
-            <svg class="w-5 h-5 transition-transform duration-300" :class="!isSidebarCollapsed ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path v-if="isSidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-
+      <header class="h-16 bg-white/80 backdrop-blur-md border-b border-white/50 shadow-sm flex items-center justify-between px-6 shrink-0 z-20 relative transition-transform duration-300">
+        <div class="flex items-center">
           <RouterLink :to="dashboardRoute" class="h-10 flex items-center hover:opacity-80 transition-opacity">
             <img src="@/assets/TopBarLogo.svg" alt="Seal Logo" class="h-full w-auto object-contain" />
           </RouterLink>
-
         </div>
 
         <div class="flex items-center space-x-5 relative">
@@ -61,7 +51,7 @@ const dashboardRoute = computed(() => {
               class="absolute -top-1 left-6 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white z-10"
             ></span>
 
-            <img class="h-8 w-8 rounded-full bg-gray-300" :src="profilePicture" alt="Missing Profile Image" />
+            <img class="h-8 w-8 rounded-full bg-gray-300 shadow-sm" :src="profilePicture" alt="Missing Profile Image" />
             <div class="hidden md:block text-sm">
               <p class="font-medium text-gray-700 leading-none">{{ authStore.user?.name || 'User' }}</p>
               <p class="text-xs text-gray-500 mt-1 capitalize">{{ authStore.activeRole }}</p>
@@ -93,14 +83,6 @@ const dashboardRoute = computed(() => {
               </div>
               <span v-if="hasNotifications" class="block h-2.5 w-2.5 rounded-full bg-red-500"></span>
             </RouterLink>
-
-            <button class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50/50 transition-colors flex items-center justify-between">
-              <div class="flex items-center space-x-3">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <span>Settings</span>
-              </div>
-              <span v-if="hasSettingsNotif" class="block h-2.5 w-2.5 rounded-full bg-red-500"></span>
-            </button>
             
             <div class="border-t border-gray-100/50 my-1"></div>
             
@@ -114,7 +96,49 @@ const dashboardRoute = computed(() => {
       </header>
 
       <div class="flex-1 overflow-hidden relative flex flex-col">
-        <main class="flex-1 overflow-y-auto p-8">
+        
+        <div 
+          class="absolute inset-0 z-40 bg-slate-900/20 backdrop-blur-[1px] transition-all duration-500 ease-out"
+          :class="!isSidebarCollapsed ? 'opacity-100 visible cursor-pointer' : 'opacity-0 invisible pointer-events-none'"
+          @click="isSidebarCollapsed = true"
+        ></div>
+
+        <main 
+          class="flex-1 overflow-y-auto p-8 transition-all duration-500 ease-out origin-top"
+          :class="!isSidebarCollapsed ? 'scale-[0.98] rounded-b-3xl bg-white/20 shadow-[inset_0_0_40px_rgba(0,0,0,0.05)] pointer-events-none select-none' : ''"
+        >
+          <div class="mb-6 flex relative z-10">
+            <button 
+              @click="isSidebarCollapsed = !isSidebarCollapsed" 
+              class="relative flex items-center justify-center w-[100px] h-[44px] backdrop-blur-md border shadow-sm rounded-2xl transition-all duration-300 focus:outline-none hover:shadow-md group overflow-hidden"
+              :class="isSidebarCollapsed ? 'animate-cycle-bg text-gray-700' : 'bg-white/60 border-white/60 text-gray-700 hover:text-seal-teal hover:bg-white/90'"
+              title="Toggle Menu"
+            >
+              
+              <div 
+                class="absolute inset-0 flex items-center justify-center transition-all duration-300"
+                :class="isSidebarCollapsed ? 'animate-cycle-text' : 'opacity-100 translate-y-0 scale-100'"
+              >
+                <svg class="w-4 h-4 mr-1.5 currentColor transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+                <span class="font-bold text-sm tracking-wide">Menu</span>
+              </div>
+
+              <div 
+                class="absolute inset-0 flex items-center justify-center transition-all duration-300 opacity-0"
+                :class="isSidebarCollapsed ? 'animate-cycle-icon' : 'translate-y-4 scale-75'"
+              >
+                <img 
+                  src="@/assets/seal-face.png" 
+                  alt="Seal Menu Icon" 
+                  class="w-40 h-40 scale-110 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-125" 
+                />
+              </div>
+
+            </button>
+          </div>
+
           <RouterView />
         </main>
       </div>
@@ -122,3 +146,44 @@ const dashboardRoute = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* CHANGED: Added bgSwap for the background color transition */
+.animate-cycle-bg {
+  animation: bgSwap 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+.animate-cycle-text {
+  animation: textSwap 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+.animate-cycle-icon {
+  animation: iconSwap 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes bgSwap {
+  0%, 45% { 
+    background-color: rgba(255, 255, 255, 0.6); 
+    border-color: rgba(255, 255, 255, 0.6); 
+  }
+  48%, 95% { 
+    background-color: #0d9488; /* Tailwind's text-seal-teal */
+    border-color: #0d9488; 
+  }
+  98%, 100% { 
+    background-color: rgba(255, 255, 255, 0.6); 
+    border-color: rgba(255, 255, 255, 0.6); 
+  }
+}
+
+@keyframes textSwap {
+  0%, 45% { opacity: 1; transform: translateY(0px) scale(1); pointer-events: auto; }
+  48%, 50% { opacity: 0; transform: translateY(-15px) scale(0.8); pointer-events: none; }
+  50.1%, 95% { opacity: 0; transform: translateY(15px) scale(0.8); pointer-events: none; }
+  98%, 100% { opacity: 1; transform: translateY(0px) scale(1); pointer-events: auto; }
+}
+
+@keyframes iconSwap {
+  0%, 45% { opacity: 0; transform: translateY(15px) scale(0.5) rotate(-10deg); pointer-events: none; }
+  48%, 95% { opacity: 1; transform: translateY(0px) scale(1) rotate(0deg); pointer-events: auto; }
+  98%, 100% { opacity: 0; transform: translateY(-15px) scale(0.5) rotate(10deg); pointer-events: none; }
+}
+</style>
