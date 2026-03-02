@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar.vue'
 import profilePicture from '@/assets/PFPFOREVERYONE.png'
 
 const authStore = useAuthStore()
+const router = useRouter() // Added router
 
 const isSidebarCollapsed = ref(true)
 const isProfileDropdownOpen = ref(false)
@@ -13,6 +14,13 @@ const hasNotifications = ref(true)
 const hasSettingsNotif = ref(false)
 
 const hasAnyNotification = computed(() => hasNotifications.value || hasSettingsNotif.value)
+
+
+const dashboardRoute = computed(() => {
+  return authStore.activeRole === 'client' 
+    ? { name: 'client-dashboard' } 
+    : { name: 'freelancer-dashboard' }
+})
 </script>
 
 <template>
@@ -36,7 +44,7 @@ const hasAnyNotification = computed(() => hasNotifications.value || hasSettingsN
             </svg>
           </button>
 
-          <RouterLink to="/" class="h-10 flex items-center hover:opacity-80 transition-opacity">
+          <RouterLink :to="dashboardRoute" class="h-10 flex items-center hover:opacity-80 transition-opacity">
             <img src="@/assets/TopBarLogo.svg" alt="Seal Logo" class="h-full w-auto object-contain" />
           </RouterLink>
 
