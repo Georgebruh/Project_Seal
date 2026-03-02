@@ -83,8 +83,7 @@ export interface ClientDashboardData {
   sealsList: ClientSealData[];
 }
 export const getClientDashboardData = async (userId: string): Promise<ClientDashboardData> => {
-  // We select columns from 'seals' AND the 'full_name' from the related 'Profiles'
-  // Note: 'Profiles' must have a foreign key relationship with 'seals'
+
   const { data, error } = await supabase
     .from('Seals')
     .select(`
@@ -109,25 +108,25 @@ export const getClientDashboardData = async (userId: string): Promise<ClientDash
 
   return {
     activeSeals: {
-      total: data.filter(s => s.status === 'In Progress').length,
-      top: data.filter(s => s.status === 'In Progress').slice(0, 2).map(s => ({
+      total: data.filter(s => s.status === 'In progress').length,
+      top: data.filter(s => s.status === 'In progress').slice(0, 2).map(s => ({
         id: s.id,
-        title: s.title,
-        // Accessing the joined table data
+        title: s.project_name,
+        
         freelancerName: s.Profiles?.full_name || 'Unknown Freelancer'
       }))
     },
     pendingReview: {
-      total: data.filter(s => s.status === 'Pending Review').length,
-      top: data.filter(s => s.status === 'Pending Review').slice(0, 2).map(s => ({
+      total: data.filter(s => s.status === 'Awaiting funding').length,
+      top: data.filter(s => s.status === 'Awaiting funding').slice(0, 2).map(s => ({
         id: s.id,
-        title: s.title,
+        title: s.project_name,
         freelancerName: s.Profiles?.full_name || 'Unknown Freelancer'
       }))
     },
     sealsList: data.map(s => ({
       id: s.id,
-      title: s.title,
+      title: s.project_name,
       freelancerName: s.Profiles?.full_name || 'Unknown Freelancer',
       date: s.created_at ? new Date(s.created_at).toLocaleDateString() : 'N/A',      
       amount: `₱${(s.total_amount ?? 0).toLocaleString()}`,
