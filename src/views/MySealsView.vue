@@ -64,18 +64,17 @@ onMounted(async () => {
 
 
 const filteredSeals = computed(() => {
-  
   let list = [...allSeals.value]
 
- 
   const activeTab = route.query.tab
   if (activeTab === 'active') {
-    list = list.filter(seal => seal.status === 'In progress')
+    // Group "working" and "reviewing output" into the active tab
+    list = list.filter(seal => ['In progress', 'Pending output review'].includes(seal.status))
   } else if (activeTab === 'review') {
-    list = list.filter(seal => seal.status === 'Awaiting funding')
+    // Group contract reviews and funding into the review tab
+    list = list.filter(seal => ['Awaiting funding', 'Pending review'].includes(seal.status))
   }
 
-  
   if (!searchQuery.value.trim()) return list
   
   const search = searchQuery.value.toLowerCase()
@@ -90,12 +89,12 @@ const formatCurrency = (amount: number) => {
   return `₱${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
 }
 
-// Map the real database statuses to your UI colors (slightly tweaked for glass)
 const getStatusStyles = (status: string) => {
   switch(status) {
     case 'Pending review': return 'bg-amber-100/80 text-amber-800 border-amber-200/50'
     case 'Awaiting funding': return 'bg-blue-100/80 text-blue-800 border-blue-200/50'
     case 'In progress': return 'bg-indigo-100/80 text-indigo-800 border-indigo-200/50'
+    case 'Pending output review': return 'bg-purple-100/80 text-purple-800 border-purple-200/50' // NEW
     case 'Completed': return 'bg-emerald-100/80 text-emerald-800 border-emerald-200/50'
     case 'Cancelled': return 'bg-red-100/80 text-red-800 border-red-200/50'
     default: return 'bg-gray-100/80 text-gray-800 border-gray-200/50'
@@ -105,9 +104,10 @@ const getStatusStyles = (status: string) => {
 const getMilestoneMessage = (status: string, role: string) => {
   if (role === 'client') {
     switch(status) {
-      case 'Pending review': return 'Action Needed: Review Submitted Work'
+      case 'Pending review': return 'Action Needed: Review Contract'
       case 'Awaiting funding': return 'Action Needed: Deposit Funds to Escrow'
       case 'In progress': return 'Freelancer is working'
+      case 'Pending output review': return 'Action Needed: Review & Approve Output' // NEW
       case 'Completed': return 'Funds Released'
       case 'Cancelled': return 'Project Voided'
       default: return 'Pending Update'
@@ -117,6 +117,7 @@ const getMilestoneMessage = (status: string, role: string) => {
       case 'Pending review': return 'Waiting for Client to Accept'
       case 'Awaiting funding': return 'Waiting for Client Escrow Deposit'
       case 'In progress': return 'Work Ongoing'
+      case 'Pending output review': return 'Waiting for Client Approval' // NEW
       case 'Completed': return 'Funds Released'
       case 'Cancelled': return 'Project Voided'
       default: return 'Pending Update'
