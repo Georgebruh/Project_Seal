@@ -26,6 +26,31 @@ const isLoggingIn = ref(false)
 // Link Copy State
 const linkPressed = ref(false)
 
+// NEW: Custom Modal State
+const customModal = ref({
+  isOpen: false,
+  type: 'alert' as 'alert' | 'confirm',
+  title: '',
+  message: '',
+  confirmText: 'Confirm',
+  confirmAction: null as Function | null
+})
+
+const showAlert = (title: string, message: string) => {
+  customModal.value = { isOpen: true, type: 'alert', title, message, confirmText: 'OK', confirmAction: null }
+}
+
+const showConfirm = (title: string, message: string, confirmText: string, action: Function) => {
+  customModal.value = { isOpen: true, type: 'confirm', title, message, confirmText, confirmAction: action }
+}
+
+const handleModalConfirm = async () => {
+  if (customModal.value.confirmAction) {
+    await customModal.value.confirmAction()
+  }
+  customModal.value.isOpen = false
+}
+
 onMounted(async () => {
   // Ensure auth state is initialized before fetching
   await authStore.initialize()
@@ -214,7 +239,7 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
     
   } catch (error: any) {
     console.error('Error updating status:', error)
-    alert(error.message || 'Failed to update status. Check permissions.')
+    showAlert('Update Failed', error.message || 'Failed to update status. Check permissions.')
   }
 }
 
@@ -226,22 +251,31 @@ const proceedToPayment = () => {
   router.push(`/pay/${seal.value.id}`)
 }
 
-const freelancerSubmitWork = async () => {
-  if(confirm('Have you delivered the final files to the client? Click OK to update the status and request fund release.')) {
-    await updateSealStatus('Pending output review')
-  }
+const freelancerSubmitWork = () => {
+  showConfirm(
+    'Submit Final Work', 
+    'Have you delivered the final files to the client? Click Confirm to update the status and request fund release.', 
+    'Submit Work',
+    async () => await updateSealStatus('Pending output review')
+  )
 }
 
-const clientApproveWork = async () => {
-  if(confirm('Are you sure you want to approve this work and release funds? This action is final.')) {
-    await updateSealStatus('Completed')
-  }
+const clientApproveWork = () => {
+  showConfirm(
+    'Approve & Release Funds', 
+    'Are you sure you want to approve this work and release funds? This action is final.', 
+    'Release Funds',
+    async () => await updateSealStatus('Completed')
+  )
 }
 
-const freelancerCancel = async () => {
-  if(confirm('Are you sure you want to cancel this seal?')) {
-    await updateSealStatus('Cancelled')
-  }
+const freelancerCancel = () => {
+  showConfirm(
+    'Cancel Project', 
+    'Are you sure you want to cancel this seal? This action cannot be undone.', 
+    'Cancel Project',
+    async () => await updateSealStatus('Cancelled')
+  )
 }
 
 const handleBackToList = () => {
@@ -495,6 +529,35 @@ const handleBackToList = () => {
     <div v-else class="text-center py-12">
        <p class="text-gray-500">Seal not found.</p>
        <button @click="router.back()" class="mt-4 text-seal-teal hover:underline">Go Back</button>
+    </div>
+
+    <div v-if="customModal.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity">
+      <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all">
+        
+        <div v-if="customModal.type === 'confirm'" class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div v-else class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+
+        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ customModal.title }}</h3>
+        <p class="text-gray-500 text-sm mb-6">{{ customModal.message }}</p>
+        
+        <div v-if="customModal.type === 'confirm'" class="flex gap-3">
+          <button @click="customModal.isOpen = false" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors">
+            Cancel
+          </button>
+          <button @click="handleModalConfirm" class="flex-1 py-3 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold transition-colors shadow-sm">
+            {{ customModal.confirmText }}
+          </button>
+        </div>
+
+        <button v-else @click="customModal.isOpen = false" class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold shadow-sm transition-colors">
+          Okay
+        </button>
+
+      </div>
     </div>
 
   </div>
