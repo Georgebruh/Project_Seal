@@ -53,7 +53,7 @@ Want to test out the platform? Follow these steps:
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/georgebruh/project_seal.git
+git clone https://github.com/georgebruh/project_seal
 cd project_seal
 ```
 
