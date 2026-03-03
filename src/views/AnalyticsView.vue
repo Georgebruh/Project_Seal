@@ -106,6 +106,20 @@ const distribution = computed(() => {
   }
 })
 
+// style helper for the circular distribution graphic
+const projectDistributionStyle = computed(() => {
+  const { completed, inProgress, pending } = distribution.value
+  // generate a conic-gradient based on percentage slices
+  const compPct = completed.pct
+  const inP = inProgress.pct
+  const pend = pending.pct
+  // if nothing yet, show a subtle background
+  if (compPct + inP + pend === 0) {
+    return 'background: #e5e7eb;' // light gray
+  }
+  return `background: conic-gradient(#10b981 ${compPct}%, #3b82f6 ${compPct + inP}%, #fbbf24 0);`
+})
+
 // --- 4. DYNAMIC CHARTS (Interval Logic) ---
 
 // type used for each bucket in the dynamic charts
@@ -375,10 +389,16 @@ const achievements = computed(() => {
           </div>
           
           <div class="flex-1 flex items-center justify-center gap-8">
-            <div class="relative w-40 h-40 rounded-full border-[16px] border-slate-100 dark:border-slate-700 transition-colors">
-              <div class="absolute inset-[-16px] rounded-full border-[16px] border-emerald-500 transition-all duration-1000" :style="`clip-path: polygon(0 0, 100% 0, 100% 100%, 0 ${100 - distribution.completed.pct}%);`"></div>
-              <div class="absolute inset-[-16px] rounded-full border-[16px] border-blue-500 transition-all duration-1000" :style="`clip-path: polygon(50% 50%, 100% 100%, 0 100%); opacity: ${distribution.inProgress.pct > 0 ? 1 : 0}`"></div>
-              <div class="absolute inset-[-16px] rounded-full border-[16px] border-amber-400 transition-all duration-1000" :style="`clip-path: polygon(100% 50%, 100% 100%, 50% 50%); opacity: ${distribution.pending.pct > 0 ? 1 : 0}`"></div>
+            <div class="relative w-40 h-40 flex items-center justify-center shrink-0 drop-shadow-sm">
+              <div 
+                class="absolute inset-0 rounded-full transition-all duration-1000"
+                :style="projectDistributionStyle"
+              ></div>
+              
+              <div class="relative z-10 flex flex-col items-center mt-1">
+                <span class="text-3xl font-black text-slate-800 dark:text-gray-100 leading-none">{{ totalSeals }}</span>
+                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total</span>
+              </div>
             </div>
             
             <div class="space-y-4">
@@ -404,7 +424,7 @@ const achievements = computed(() => {
         <div class="bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/60 dark:border-slate-700/50 transition-colors duration-300">
           <div class="mb-6">
             <h3 class="font-bold text-lg text-slate-900 dark:text-white transition-colors">Client Satisfaction</h3>
-            <p class="text-sm text-slate-500 dark:text-slate-400 transition-colors">Average ratings by category (Mocked)</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400 transition-colors">Average ratings by category</p>
           </div>
           
           <div class="space-y-4">
