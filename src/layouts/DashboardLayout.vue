@@ -27,7 +27,7 @@ const dashboardRoute = computed(() => {
     
     <Sidebar 
       :isCollapsed="isSidebarCollapsed" 
-      class="shadow-[4px_0_30px_rgba(0,0,0,0.15)] drop-shadow-2xl border-r border-gray-200/50"
+      class="shadow-[4px_0_30px_rgba(0,0,0,0.15)] dark:shadow-[4px_0_30px_rgba(0,0,0,0.3)] drop-shadow-2xl border-r border-gray-200/50 dark:border-slate-700/50"
       style="z-index: 50;"
     />
 
@@ -48,16 +48,16 @@ const dashboardRoute = computed(() => {
           >
             <span 
               v-if="!isProfileDropdownOpen && hasAnyNotification" 
-              class="absolute -top-1 left-6 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white z-10"
+              class="absolute -top-1 left-6 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-800 z-10 transition-colors"
             ></span>
 
-            <img class="h-8 w-8 rounded-full bg-gray-300 shadow-sm" :src="profilePicture" alt="Missing Profile Image" />
+            <img class="h-8 w-8 rounded-full bg-gray-300 dark:bg-slate-600 shadow-sm transition-colors" :src="profilePicture" alt="Missing Profile Image" />
             <div class="hidden md:block text-sm">
-              <p class="font-medium text-gray-700 leading-none">{{ authStore.user?.name || 'User' }}</p>
-              <p class="text-xs text-gray-500 mt-1 capitalize">{{ authStore.activeRole }}</p>
+              <p class="font-medium text-gray-700 dark:text-gray-200 leading-none transition-colors">{{ authStore.user?.name || 'User' }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 capitalize transition-colors">{{ authStore.activeRole }}</p>
             </div>
             <svg 
-              class="w-4 h-4 text-gray-400 transition-transform duration-200" 
+              class="w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform duration-200" 
               :class="isProfileDropdownOpen ? 'rotate-180' : ''"
               fill="none" stroke="currentColor" viewBox="0 0 24 24"
             >
@@ -113,13 +113,15 @@ const dashboardRoute = computed(() => {
 
         <main 
           class="flex-1 overflow-y-auto p-8 transition-all duration-500 ease-out origin-top"
-          :class="!isSidebarCollapsed ? 'scale-[0.98] rounded-b-3xl bg-white/20 shadow-[inset_0_0_40px_rgba(0,0,0,0.05)] pointer-events-none select-none' : ''"
+          :class="!isSidebarCollapsed ? 'scale-[0.98] rounded-b-3xl bg-white/20 dark:bg-slate-800/20 shadow-[inset_0_0_40px_rgba(0,0,0,0.05)] pointer-events-none select-none' : ''"
         >
           <div class="mb-6 flex relative z-10">
             <button 
               @click="isSidebarCollapsed = !isSidebarCollapsed" 
-              class="relative flex items-center justify-center w-[100px] h-[44px] backdrop-blur-md border shadow-sm rounded-2xl transition-all duration-300 focus:outline-none hover:shadow-md group overflow-hidden"
-              :class="isSidebarCollapsed ? 'animate-cycle-bg text-gray-700' : 'bg-white/60 border-white/60 text-gray-700 hover:text-seal-teal hover:bg-white/90'"
+              class="relative flex items-center justify-center w-[100px] h-[44px] backdrop-blur-md border rounded-2xl transition-all duration-300 focus:outline-none group overflow-hidden shadow-lg"
+              :class="isSidebarCollapsed 
+                ? 'bg-seal-teal/90 dark:bg-teal-500/90 border-teal-400/50 dark:border-teal-400/30 text-white shadow-teal-500/30 hover:bg-teal-600 dark:hover:bg-teal-400 hover:shadow-teal-500/40' 
+                : 'bg-white/60 dark:bg-slate-800/60 border-white/60 dark:border-slate-600 text-seal-teal dark:text-teal-400 hover:bg-white/90 dark:hover:bg-slate-700 shadow-sm'"
               title="Toggle Menu"
             >
               
@@ -156,30 +158,12 @@ const dashboardRoute = computed(() => {
 </template>
 
 <style scoped>
-/* CHANGED: Added bgSwap for the background color transition */
-.animate-cycle-bg {
-  animation: bgSwap 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
+/* Only the text and icon animations are needed now, the background is solidly teal! */
 .animate-cycle-text {
   animation: textSwap 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
 }
 .animate-cycle-icon {
   animation: iconSwap 14s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes bgSwap {
-  0%, 45% { 
-    background-color: rgba(255, 255, 255, 0.6); 
-    border-color: rgba(255, 255, 255, 0.6); 
-  }
-  48%, 95% { 
-    background-color: #0d9488; /* Tailwind's text-seal-teal */
-    border-color: #0d9488; 
-  }
-  98%, 100% { 
-    background-color: rgba(255, 255, 255, 0.6); 
-    border-color: rgba(255, 255, 255, 0.6); 
-  }
 }
 
 @keyframes textSwap {
