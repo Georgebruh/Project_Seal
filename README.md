@@ -27,9 +27,9 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
 *(Demo video and screenshots are currently in production and will be uploaded prior to final submission. Stay tuned!)*
 
 ### Screenshots
-![Dashboard](docs/assets/dashboard.png)
-![Create a Seal](docs/assets/create_seal.png)
-![Seals](docs/assets/seals.png)
+![Dashboard](docs/dashboard.png)
+![Create a Seal](docs/create_seal.png)
+![Seals](docs/seals.png)
 
 ## 🛠️ How We Built It
 We engineered Project Seal with a modern, type-safe, and highly scalable stack:
