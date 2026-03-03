@@ -26,6 +26,8 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
 ## 💻 Visual Proof
 *(Demo video and screenshots are currently in production and will be uploaded prior to final submission. Stay tuned!)*
 ![alt text](<Screenshot from 2026-03-03 14-20-42.png>)
+![alt text](<Screenshot from 2026-03-03 14-31-58.png>)
+
 
 ## 🛠️ How We Built It
 We engineered Project Seal with a modern, type-safe, and highly scalable stack:
