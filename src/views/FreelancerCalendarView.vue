@@ -41,11 +41,11 @@ const fetchData = async () => {
   if (!authStore.user?.id) return
   try {
     const { data: sealsData } = await supabase
-      .from('seals')
+      .from('Seals') // Capitalized to match DB
       .select('*')
       .eq('freelancer_id', authStore.user.id)
-      .neq('status', 'completed')
-      .neq('status', 'cancelled')
+      .eq('status', 'In progress') // Strictly filter active seals
+
     seals.value = sealsData || []
 
     const { data: tasksData } = await supabase
@@ -119,7 +119,8 @@ const todayTasks = computed(() => {
 })
 const todaySeals = computed(() => {
   return seals.value.filter(s => {
-    const d = new Date(s.end_data || s.created_at)
+    if (!s.end_date) return false
+    const d = new Date(s.end_date)
     return formatDateForDB(d) === todayDateString
   })
 })
@@ -152,9 +153,11 @@ const calendarDays = computed(() => {
     const formattedDate = formatDateForDB(dateObj)
     
     const daySeals = seals.value.filter(s => {
-      const targetDate = new Date(s.end_data || s.created_at) 
+      if (!s.end_date) return false // Ensure date exists
+      const targetDate = new Date(s.end_date) 
       return targetDate.getFullYear() === year && targetDate.getMonth() === month && targetDate.getDate() === i
     })
+    
     const dayTasks = tasks.value.filter(t => t.task_date === formattedDate).sort((a, b) => {
       if (!a.task_time) return 1; if (!b.task_time) return -1;
       return a.task_time.localeCompare(b.task_time);
