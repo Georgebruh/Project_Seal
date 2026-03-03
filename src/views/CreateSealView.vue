@@ -78,7 +78,9 @@ const prevStep = () => {
 const copyLink = async () => {
   if (!sealLink.value) return
   try {
-    await navigator.clipboard.writeText(sealLink.value)
+    const shareText = `🔒 PROJECT SEAL: SECURE INVITATION 🔒\n\nYou have been invited to review and fund a secure digital contract.\n\n📑 Project Details:\n• Title: ${form.value.project_name}\n• Contract Value: ₱${Number(form.value.total_amount || 0).toLocaleString()}\n\nAction Required:\nPlease access the secure portal below to review the agreement and submit your escrow deposit.\n\n🔗 Secure Link:\n${sealLink.value}\n\n*This is an automated invitation generated via Project Seal.*`
+    
+    await navigator.clipboard.writeText(shareText)
     linkPressed.value = true
   } catch (err) {
     console.error('Clipboard write failed', err)
