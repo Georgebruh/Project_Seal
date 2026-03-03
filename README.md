@@ -33,6 +33,7 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
 
 ![Seals](docs/seals.png)
 
+#### 🌙 Dark Mode 
 ![Dashboard_dark](docs/dashboard_dark.png)
 <p align="center">
   <img src="docs/create_seal_dark.png" alt="Create a Seal_dark" />
