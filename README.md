@@ -24,7 +24,6 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
 * **Real-time Notifications:** Keep both parties synced on project updates, payment successes, and required actions.
 
 ## 💻 Visual Proof
-*(Demo video and screenshots are currently in production and will be uploaded prior to final submission. Stay tuned!)*
 
 ### Screenshots
 ![Dashboard](docs/dashboard.png)
@@ -32,7 +31,14 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
   <img src="docs/create_seal.png" alt="Create a Seal" />
 </p>
 
-![Seals](docs/seals.png)
+![Seals_dark](docs/seals_dark.png)
+
+![Dashboard_dark](docs/dashboard_dark.png)
+<p align="center">
+  <img src="docs/create_seal.png_dark" alt="Create a Seal" />
+</p>
+
+![Seals_dark](docs/seals_dark.png)
 
 ## 🛠️ How We Built It
 We engineered Project Seal with a modern, type-safe, and highly scalable stack:
