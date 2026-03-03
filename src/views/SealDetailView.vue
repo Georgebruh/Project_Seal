@@ -45,12 +45,12 @@ const showConfirm = (title: string, message: string, confirmText: string, action
 }
 
 const handleModalConfirm = async () => {
-  if (customModal.value.confirmAction) {
-    await customModal.value.confirmAction()
+  const action = customModal.value.confirmAction
+  customModal.value.isOpen = false // Close the UI immediately for a "snappy" feel
+  if (action) {
+    await action()
   }
-  customModal.value.isOpen = false
 }
-
 onMounted(async () => {
   // Ensure auth state is initialized before fetching
   await authStore.initialize()
@@ -300,19 +300,19 @@ const handleBackToList = () => {
       <svg class="animate-spin h-8 w-8 text-seal-teal" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
     </div>
 
-    <div v-else-if="!authStore.isAuthenticated" class="max-w-md mx-auto mt-16 bg-white p-8 rounded-3xl border border-gray-100 shadow-xl text-center">
-      <div class="w-16 h-16 bg-teal-50 text-seal-teal rounded-full flex items-center justify-center mx-auto mb-6">
+    <div v-else-if="!authStore.isAuthenticated" class="max-w-md mx-auto mt-16 bg-white dark:bg-slate-800 p-8 rounded-3xl border border-gray-100 dark:border-slate-700 shadow-xl text-center">
+      <div class="w-16 h-16 bg-teal-50 dark:bg-teal-900/30 text-seal-teal rounded-full flex items-center justify-center mx-auto mb-6">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
       </div>
-      <h2 class="text-2xl font-bold text-gray-900 mb-2">Access Project Seal</h2>
-      <p class="text-gray-500 mb-8 text-sm">Verify your identity to securely view and manage your digital contract.</p>
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Project Seal</h2>
+      <p class="text-gray-500 dark:text-gray-400 mb-8 text-sm">Verify your identity to securely view and manage your digital contract.</p>
       
       <div v-if="loginStep === 1" class="space-y-4">
         <input 
           v-model="loginPhone" 
           type="text" 
           placeholder="Enter your registered phone number" 
-          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors"
+          class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors dark:text-white"
         />
         <button 
           @click="handlePhoneSubmit" 
@@ -324,12 +324,12 @@ const handleBackToList = () => {
       </div>
 
       <div v-if="loginStep === 2" class="space-y-4">
-        <p class="text-sm font-medium text-gray-700 mb-2">Check your email for the OTP code.</p>
+        <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check your email for the OTP code.</p>
         <input 
           v-model="loginOtp" 
           type="text" 
           placeholder="Enter OTP Code" 
-          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors text-center tracking-widest font-mono text-lg"
+          class="w-full px-4 py-3 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 transition-colors text-center tracking-widest font-mono text-lg dark:text-white"
         />
         <button 
           @click="handleOtpSubmit" 
@@ -346,28 +346,28 @@ const handleBackToList = () => {
     <div v-else-if="seal">
       <div class="mb-8 flex items-center justify-between mt-4">
         <div>
-          <button @click="handleBackToList" class="text-sm font-medium text-gray-500 hover:text-seal-teal transition-colors flex items-center mb-3">
+          <button @click="handleBackToList" class="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-seal-teal transition-colors flex items-center mb-3">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Back to List
           </button>
-          <h2 class="text-3xl font-bold text-gray-900 tracking-tight">{{ seal.project_name }}</h2>
-          <p class="text-gray-500 mt-1">Seal ID: #{{ seal.id.substring(0, 8).toUpperCase() }} • {{ seal.project_type || 'General Service' }}</p>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">{{ seal.project_name }}</h2>
+          <p class="text-gray-500 dark:text-gray-400 mt-1">Seal ID: #{{ seal.id.substring(0, 8).toUpperCase() }} • {{ seal.project_type || 'General Service' }}</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2 space-y-6">
-          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col h-full">
-            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 class="font-bold text-gray-900 flex items-center">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col h-full">
+            <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/50">
+              <h3 class="font-bold text-gray-900 dark:text-white flex items-center">
                 <svg class="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 Digital Service Contract & Scope
               </h3>
             </div>
-            <div class="flex-1 p-8 bg-white font-mono text-sm text-gray-700 whitespace-pre-wrap leading-relaxed overflow-y-auto">
+            <div class="flex-1 p-8 bg-white dark:bg-slate-800 font-mono text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed overflow-y-auto">
               {{ seal.contract_text }}
               
-              <div class="mt-8 pt-4 border-t border-gray-200">
+              <div class="mt-8 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <strong>Project Scope:</strong>
                 <br />
                 {{ seal.scope }}
@@ -378,39 +378,39 @@ const handleBackToList = () => {
 
         <div class="lg:col-span-1 space-y-6">
           
-          <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Current Status</h3>
-            <div :class="['flex items-center p-4 rounded-xl border', statusInfo.color]">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Current Status</h3>
+            <div :class="['flex items-center p-4 rounded-xl border', statusInfo.color, 'dark:bg-opacity-10']">
               <svg class="w-6 h-6 mr-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="statusInfo.icon"></path>
               </svg>
               <span class="font-bold">{{ statusInfo.label }}</span>
             </div>
-            <div class="mt-6 pt-6 border-t border-gray-50">
-              <div class="flex justify-between text-xs font-bold text-gray-500 mb-2">
+            <div class="mt-6 pt-6 border-t border-gray-50 dark:border-slate-700">
+              <div class="flex justify-between text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">
                 <span>Escrow Funded</span>
                 <span>{{ statusInfo.progress }}</span>
               </div>
-              <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div class="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
                 <div class="bg-seal-teal h-2.5 rounded-full transition-all duration-1000" :style="{ width: statusInfo.progress }"></div>
               </div>
             </div>
           </div>
 
-          <div v-if="authStore.activeRole === 'client' && seal.status !== 'Cancelled'" class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm border-t-4 border-t-blue-500">
-            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Client Actions</h3>
+          <div v-if="authStore.activeRole === 'client' && seal.status !== 'Cancelled'" class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm border-t-4 border-t-blue-500">
+            <h3 class="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Client Actions</h3>
             
             <div v-if="seal.status === 'Pending review'">
-              <p class="text-sm text-gray-600 mb-4">Review the contract text. By confirming, you agree to these terms and bind yourself to this project.</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Review the contract text. By confirming, you agree to these terms and bind yourself to this project.</p>
               <button @click="clientAcceptContract" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm transition-colors">
                 Confirm Contract
               </button>
             </div>
 
             <div v-else-if="seal.status === 'Awaiting funding'">
-              <p class="text-sm text-gray-600 mb-4">Deposit the project funds to officially begin. The freelancer will start working as soon as the payment is secured.</p>
-              <div class="bg-gray-50 p-4 rounded-xl mb-4 border border-gray-100">
-                <div class="flex justify-between font-bold text-gray-900">
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Deposit the project funds to officially begin. The freelancer will start working as soon as the payment is secured.</p>
+              <div class="bg-gray-50 dark:bg-slate-900/50 p-4 rounded-xl mb-4 border border-gray-100 dark:border-slate-700">
+                <div class="flex justify-between font-bold text-gray-900 dark:text-white">
                   <span>Amount Due</span>
                   <span class="text-lg text-seal-teal">₱{{ seal.total_amount.toLocaleString() }}</span>
                 </div>
@@ -422,19 +422,19 @@ const handleBackToList = () => {
             </div>
 
             <div v-else-if="seal.status === 'In progress'" class="text-center py-4">
-              <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div class="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
-              <p class="font-medium text-gray-900">Freelancer is working.</p>
-              <p class="text-sm text-gray-500 mt-1 mb-4">Escrow is fully funded. Please wait for the freelancer to submit the final output.</p>
+              <p class="font-medium text-gray-900 dark:text-white">Freelancer is working.</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">Escrow is fully funded. Please wait for the freelancer to submit the final output.</p>
             </div>
             
             <div v-else-if="seal.status === 'Pending output review'" class="text-center py-4">
-              <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
-              <p class="font-medium text-gray-900">Output Submitted!</p>
-              <p class="text-sm text-gray-500 mt-1 mb-4">The freelancer has marked the work as complete. Once you receive and verify the final files, approve the work to release funds.</p>
+              <p class="font-medium text-gray-900 dark:text-white">Output Submitted!</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">The freelancer has marked the work as complete. Once you receive and verify the final files, approve the work to release funds.</p>
               <button @click="clientApproveWork" class="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-sm transition-colors">
                 Approve Work & Release Funds
               </button>
@@ -445,40 +445,40 @@ const handleBackToList = () => {
             </div>
           </div>
 
-          <div v-if="authStore.activeRole === 'freelancer'" class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm border-t-4 border-t-orange-500">
-            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Freelancer Status</h3>
+          <div v-if="authStore.activeRole === 'freelancer'" class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm border-t-4 border-t-orange-500">
+            <h3 class="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Freelancer Status</h3>
             
             <div v-if="seal.status === 'Pending review'" class="text-center py-4">
-              <p class="font-bold text-gray-900">Waiting for Client</p>
-              <p class="text-sm text-gray-500 mt-1">Share the link with your client. They need to review and accept the contract.</p>
+              <p class="font-bold text-gray-900 dark:text-white">Waiting for Client</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Share the link with your client. They need to review and accept the contract.</p>
               <button @click="freelancerCancel" class="mt-4 text-xs font-bold text-red-500 hover:underline">Cancel Project</button>
             </div>
 
             <div v-else-if="seal.status === 'Awaiting funding'" class="text-center py-4">
-              <div class="w-12 h-12 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div class="w-12 h-12 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
               </div>
-              <p class="font-bold text-gray-900">Do not start working yet.</p>
-              <p class="text-sm text-gray-500 mt-1">Wait until the client secures the deposit in the platform escrow.</p>
+              <p class="font-bold text-gray-900 dark:text-white">Do not start working yet.</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Wait until the client secures the deposit in the platform escrow.</p>
             </div>
 
             <div v-else-if="seal.status === 'In progress'" class="text-center py-4">
-              <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div class="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
               </div>
-              <p class="font-medium text-gray-900">Escrow Funded</p>
-              <p class="text-sm text-gray-500 mt-1 mb-4">You may begin work safely. Deliver the final files directly to your client, then mark the output as submitted.</p>
+              <p class="font-medium text-gray-900 dark:text-white">Escrow Funded</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">You may begin work safely. Deliver the final files directly to your client, then mark the output as submitted.</p>
               <button @click="freelancerSubmitWork" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-sm transition-colors">
                 Mark Work as Submitted
               </button>
             </div>
 
             <div v-else-if="seal.status === 'Pending output review'" class="text-center py-4">
-              <div class="w-12 h-12 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+              <div class="w-12 h-12 bg-purple-50 dark:bg-purple-900/30 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               </div>
-              <p class="font-medium text-gray-900">Awaiting Client Approval</p>
-              <p class="text-sm text-gray-500 mt-1">You have submitted the work. The client must now review the files and release the funds.</p>
+              <p class="font-medium text-gray-900 dark:text-white">Awaiting Client Approval</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">You have submitted the work. The client must now review the files and release the funds.</p>
             </div>
 
             <div v-else-if="seal.status === 'Completed'" class="text-center py-4 text-green-600 font-bold">
@@ -490,35 +490,35 @@ const handleBackToList = () => {
             </div>
           </div>
 
-          <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Project Details</h3>
+          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Project Details</h3>
             <div class="space-y-4 text-sm">
               <div class="flex justify-between items-center">
-                <span class="text-gray-500">Total Contract</span>
-                <span class="font-bold text-gray-900">₱{{ seal.total_amount.toLocaleString() }}</span>
+                <span class="text-gray-500 dark:text-gray-400">Total Contract</span>
+                <span class="font-bold text-gray-900 dark:text-white">₱{{ seal.total_amount.toLocaleString() }}</span>
               </div>
-              <div class="flex justify-between items-center pt-3 border-t border-gray-50">
-                <span class="text-gray-500">Client</span>
-                <span class="font-medium text-gray-900">{{ clientName }}</span>
+              <div class="flex justify-between items-center pt-3 border-t border-gray-50 dark:border-slate-700">
+                <span class="text-gray-500 dark:text-gray-400">Client</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ clientName }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-gray-500">Freelancer</span>
-                <span class="font-medium text-gray-900">{{ freelancerName }}</span>
+                <span class="text-gray-500 dark:text-gray-400">Freelancer</span>
+                <span class="font-medium text-gray-900 dark:text-white">{{ freelancerName }}</span>
               </div>
-              <div class="flex justify-between items-center pt-3 border-t border-gray-50">
-                <span class="text-gray-500">Timeline</span>
-                <span class="font-medium text-gray-900">
+              <div class="flex justify-between items-center pt-3 border-t border-gray-50 dark:border-slate-700">
+                <span class="text-gray-500 dark:text-gray-400">Timeline</span>
+                <span class="font-medium text-gray-900 dark:text-white">
                   {{ new Date(seal.start_date).toLocaleDateString() }} to {{ new Date(seal.end_date).toLocaleDateString() }}
                 </span>
               </div>
             </div>
           </div>
           
-          <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Shareable Link</h3>
-            <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+          <div class="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm">
+            <h3 class="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Shareable Link</h3>
+            <div class="flex items-center bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2">
               <input
-                class="flex-1 bg-transparent focus:outline-none text-xs text-gray-600 truncate"
+                class="flex-1 bg-transparent focus:outline-none text-xs text-gray-600 dark:text-gray-400 truncate"
                 readonly
                 :value="generatedSealLink"
               />
@@ -534,25 +534,28 @@ const handleBackToList = () => {
     </div>
     
     <div v-else class="text-center py-12">
-       <p class="text-gray-500">Seal not found.</p>
+       <p class="text-gray-500 dark:text-gray-400">Seal not found.</p>
        <button @click="router.back()" class="mt-4 text-seal-teal hover:underline">Go Back</button>
     </div>
 
-    <div v-if="customModal.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity">
-      <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all">
+  <Transition name="fade">
+  <div v-if="customModal.isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 dark:bg-black/60 backdrop-blur-sm">
+    
+    <Transition name="pop" appear>
+      <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center transform transition-all">
         
-        <div v-if="customModal.type === 'confirm'" class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div v-if="customModal.type === 'confirm'" class="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
-        <div v-else class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div v-else class="w-16 h-16 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
         </div>
 
-        <h3 class="text-xl font-bold text-gray-900 mb-2">{{ customModal.title }}</h3>
-        <p class="text-gray-500 text-sm mb-6">{{ customModal.message }}</p>
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">{{ customModal.title }}</h3>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">{{ customModal.message }}</p>
         
         <div v-if="customModal.type === 'confirm'" class="flex gap-3">
-          <button @click="customModal.isOpen = false" class="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors">
+          <button @click="customModal.isOpen = false" class="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-gray-300 rounded-xl font-bold transition-colors">
             Cancel
           </button>
           <button @click="handleModalConfirm" class="flex-1 py-3 bg-seal-teal hover:bg-teal-700 text-white rounded-xl font-bold transition-colors shadow-sm">
@@ -560,12 +563,15 @@ const handleBackToList = () => {
           </button>
         </div>
 
-        <button v-else @click="customModal.isOpen = false" class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold shadow-sm transition-colors">
+        <button v-else @click="customModal.isOpen = false" class="w-full py-3 bg-gray-900 dark:bg-slate-900 hover:bg-gray-800 text-white rounded-xl font-bold shadow-sm transition-colors">
           Okay
         </button>
 
-      </div>
+        </div>
+      </Transition>
+      
     </div>
+  </Transition>
 
   </div>
 </template>
