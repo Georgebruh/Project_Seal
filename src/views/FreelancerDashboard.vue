@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue' // Added onUnmounted
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
 
@@ -17,6 +17,28 @@ const transactionsData = ref([] as any[])
 // Real Seals Data
 const activeSealsList = ref<any[]>([])
 
+// Real-time channel reference
+let dashboardChannel: any = null
+
+const setupRealtime = (userId: string) => {
+  dashboardChannel = supabase
+    .channel('freelancer-dashboard-realtime')
+    .on(
+      'postgres_changes',
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'Seals',
+        filter: `freelancer_id=eq.${userId}` 
+      },
+      () => {
+        // Re-trigger the full data fetch to update counters and lists
+        loadDashboardData()
+      }
+    )
+    .subscribe()
+}
+
 // UPDATED: Added dark mode color variants for proper contrast
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -28,10 +50,8 @@ const getStatusColor = (status: string) => {
   }
 }
 
-onMounted(async () => {
+const loadDashboardData = async () => {
   try {
-    isLoading.value = true
-
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw new Error('User not authenticated')
 
@@ -142,6 +162,20 @@ onMounted(async () => {
     console.error("Failed to load dashboard data:", error)
   } finally {
     isLoading.value = false 
+  }
+}
+
+onMounted(async () => {
+  await loadDashboardData()
+  
+  // Initialize Real-time
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) setupRealtime(user.id)
+})
+
+onUnmounted(() => {
+  if (dashboardChannel) {
+    supabase.removeChannel(dashboardChannel)
   }
 })
 </script>

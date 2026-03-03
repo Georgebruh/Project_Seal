@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/supabase'
@@ -51,10 +51,43 @@ const handleModalConfirm = async () => {
     await action()
   }
 }
+
+let sealChannel: any = null //
+
+const setupRealtime = () => {
+  sealChannel = supabase
+    .channel(`seal-detail-${sealId}`) //
+    .on(
+      'postgres_changes',
+      { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'Seals', 
+        filter: `id=eq.${sealId}` 
+      },
+      (payload) => {
+        // This instantly updates the statusInfo computed property and UI buttons
+        seal.value = { ...seal.value, ...payload.new } //
+        
+        // If the client_id was just assigned (contract accepted), refresh details to get names
+        if (payload.new.client_id && !seal.value.client_id) {
+           fetchSealDetails() //
+        }
+      }
+    )
+    .subscribe() //
+}
+
 onMounted(async () => {
-  // Ensure auth state is initialized before fetching
-  await authStore.initialize()
-  await fetchSealDetails()
+  await authStore.initialize() //
+  await fetchSealDetails() //
+  setupRealtime() //
+})
+
+onUnmounted(() => {
+  if (sealChannel) {
+    supabase.removeChannel(sealChannel) //
+  }
 })
 
 const fetchSealDetails = async () => {

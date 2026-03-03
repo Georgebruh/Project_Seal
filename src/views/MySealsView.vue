@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -12,18 +12,70 @@ const isLoading = ref(true)
 const searchQuery = ref('')
 const allSeals = ref<any[]>([])
 
+// Real-time channel reference
+let listChannel: any = null
+
+// Helper to map raw database row to your specific UI structure
+const mapSealToUI = (seal: any) => {
+  const shortId = seal.id.substring(0, 8).toUpperCase()
+  
+  let counterpartName = ''
+  if (authStore.activeRole === 'client') {
+    counterpartName = seal.freelancer_id ? (seal.freelancer_name || 'Freelancer') : 'Awaiting Freelancer'
+  } else {
+    counterpartName = seal.client_id ? (seal.client_name || 'Client') : 'Awaiting Client'
+  }
+  
+  return { 
+    id: seal.id, 
+    displayId: `SEAL-${shortId}`,
+    title: seal.project_name, 
+    counterpart: counterpartName, 
+    amount: seal.total_amount, 
+    status: seal.status, 
+    nextMilestone: getMilestoneMessage(seal.status, authStore.activeRole)
+  }
+}
+
+const setupRealtime = () => {
+  listChannel = supabase
+    .channel('my-seals-realtime')
+    .on(
+      'postgres_changes',
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'Seals' 
+      },
+      (payload) => {
+        if (payload.eventType === 'UPDATE') {
+          const index = allSeals.value.findIndex(s => s.id === payload.new.id)
+          if (index !== -1) {
+            // Re-apply your mapping logic to the updated database row
+            allSeals.value[index] = mapSealToUI(payload.new)
+          }
+        } else if (payload.eventType === 'INSERT') {
+          // Only add if the user is the freelancer or client
+          if (payload.new.freelancer_id === authStore.user?.id || payload.new.client_id === authStore.user?.id) {
+            allSeals.value.unshift(mapSealToUI(payload.new))
+          }
+        } else if (payload.eventType === 'DELETE') {
+          allSeals.value = allSeals.value.filter(s => s.id !== payload.old.id)
+        }
+      }
+    )
+    .subscribe()
+}
+
 onMounted(async () => {
   try {
     isLoading.value = true
     
-    // 1. Get authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) throw new Error('User not authenticated')
 
-    // 2. Query based on role
     const roleColumn = authStore.activeRole === 'client' ? 'client_id' : 'freelancer_id'
 
-    // 3. Fetch seals
     const { data: sealsData, error: sealsError } = await supabase
       .from('Seals')
       .select('*')
@@ -32,33 +84,23 @@ onMounted(async () => {
 
     if (sealsError) throw sealsError
 
-    // 4. Map to UI structure
     if (sealsData) {
-      allSeals.value = sealsData.map(seal => {
-        const shortId = seal.id.substring(0, 8).toUpperCase()
-        
-        let counterpartName = ''
-        if (authStore.activeRole === 'client') {
-          counterpartName = seal.freelancer_id ? (seal.freelancer_name || 'Freelancer') : 'Awaiting Freelancer'
-        } else {
-          counterpartName = seal.client_id ? (seal.client_name || 'Client') : 'Awaiting Client'
-        }
-        
-        return { 
-          id: seal.id, 
-          displayId: `SEAL-${shortId}`,
-          title: seal.project_name, 
-          counterpart: counterpartName, 
-          amount: seal.total_amount, 
-          status: seal.status, 
-          nextMilestone: getMilestoneMessage(seal.status, authStore.activeRole)
-        }
-      })
+      allSeals.value = sealsData.map(seal => mapSealToUI(seal))
     }
+
+    // Start listening for changes after initial fetch
+    setupRealtime()
+
   } catch (error) {
     console.error('Error fetching seals:', error)
   } finally {
     isLoading.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (listChannel) {
+    supabase.removeChannel(listChannel)
   }
 })
 
@@ -67,10 +109,8 @@ const filteredSeals = computed(() => {
 
   const activeTab = route.query.tab
   if (activeTab === 'active') {
-    // Group "working" and "reviewing output" into the active tab
     list = list.filter(seal => ['In progress', 'Pending output review'].includes(seal.status))
   } else if (activeTab === 'review') {
-    // Group contract reviews and funding into the review tab
     list = list.filter(seal => ['Awaiting funding', 'Pending review'].includes(seal.status))
   }
 
@@ -88,7 +128,6 @@ const formatCurrency = (amount: number) => {
   return `₱${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`
 }
 
-// UPDATED: Added dark mode color variants for proper contrast
 const getStatusStyles = (status: string) => {
   switch(status) {
     case 'Pending review': return 'bg-amber-100/80 text-amber-800 border-amber-200/50 dark:bg-amber-900/40 dark:text-amber-400 dark:border-amber-800/50'
