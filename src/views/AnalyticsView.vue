@@ -193,3 +193,89 @@
 
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+
+// summary cards shown at the top-right of the dashboard
+const metrics = ref([
+  {
+    title: 'Total Seals',
+    value: '124',
+    change: '+8%',
+    iconText: 'S',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-500',
+  },
+  {
+    title: 'Completed',
+    value: '98',
+    change: '+5%',
+    iconText: '✔',
+    iconBg: 'bg-green-100',
+    iconColor: 'text-green-500',
+  },
+  {
+    title: 'Revenue',
+    value: '$12.4k',
+    change: '+12%',
+    iconText: '$',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-500',
+  },
+]);
+
+// client satisfaction ratings by category
+const satisfactionScores = ref([
+  { category: 'Communication', score: 85 },
+  { category: 'Quality', score: 92 },
+  { category: 'Timeliness', score: 78 },
+]);
+
+// monthly project count (used for bar chart)
+const monthlyProjects = ref([
+  { month: 'Aug', height: 'h-12' },
+  { month: 'Sep', height: 'h-20' },
+  { month: 'Oct', height: 'h-16' },
+  { month: 'Nov', height: 'h-24' },
+  { month: 'Dec', height: 'h-14' },
+  { month: 'Jan', height: 'h-10' },
+  { month: 'Feb', height: 'h-18' },
+]);
+
+// recent achievement badges
+const achievements = ref([
+  {
+    bg: 'bg-emerald-50',
+    iconBg: 'bg-emerald-200',
+    icon: '🏆',
+    title: 'Top Seller',
+    text: 'text-emerald-600',
+    subtitle: 'Reached $10k in revenue',
+  },
+  {
+    bg: 'bg-blue-50',
+    iconBg: 'bg-blue-200',
+    icon: '💡',
+    title: 'Innovator',
+    text: 'text-blue-600',
+    subtitle: '5 new seal ideas',
+  },
+  {
+    bg: 'bg-amber-50',
+    iconBg: 'bg-amber-200',
+    icon: '🔥',
+    title: 'Hot Streak',
+    text: 'text-amber-600',
+    subtitle: '10 projects in a row',
+  },
+  {
+    bg: 'bg-slate-50',
+    iconBg: 'bg-slate-200',
+    icon: '⭐',
+    title: '5-Star Reviews',
+    text: 'text-slate-600',
+    subtitle: '40+ positive ratings',
+  },
+]);
+</script>
