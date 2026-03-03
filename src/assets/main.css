@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Set Tailwind's default sans font to Plus Jakarta Sans */
@@ -20,6 +21,11 @@ body {
   
   /* Force Plus Jakarta Sans everywhere */
   font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* Override the light gradient when Dark Mode is active */
+.dark body {
+  background: #0f172a !important; /* Tailwind's slate-900 */
 }
 
 /* Ensure nothing overrides it */
