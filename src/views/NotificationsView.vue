@@ -62,103 +62,157 @@ const getIconColor = (type: string) => {
 
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { supabase } from '@/supabase'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const isLoading = ref(true)
-const notifications = ref<any[]>([])
+const seals = ref<any[]>([])
+let sealSubscription: any = null
 
-// Simulate fetching from Supabase on page load
-onMounted(async () => {
-  setTimeout(() => {
-    notifications.value = [
-      { 
-        id: 1, 
-        title: 'Payment Released!', 
-        message: 'Acme Corp has approved your work for "E-Commerce Website Redesign". ₱22,500.00 is being transferred to your bank account.', 
-        time: '2 mins ago', 
-        type: 'success', 
-        isRead: false, 
-        link: '/seal/123' 
+// Use localStorage to track when the user last "cleared" notifications
+const lastReadTimestamp = ref(Number(localStorage.getItem('notifications_read_at') || 0))
+
+const setupRealtimeListener = () => {
+  sealSubscription = supabase
+    .channel('public:Seals:notifications')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'Seals',
+        filter: authStore.activeRole === 'freelancer' 
+          ? `freelancer_id=eq.${authStore.user.id}` 
+          : `client_id=eq.${authStore.user.id}`
       },
-      { 
-        id: 2, 
-        title: 'Action Required: Revision Requested', 
-        message: 'The client has requested changes for "Mobile App UI/UX". Please review their notes and submit the updated files.', 
-        time: '1 hour ago', 
-        type: 'action', 
-        isRead: false, 
-        link: '/seal/456' 
-      },
-      { 
-        id: 3, 
-        title: 'Deadline Approaching', 
-        message: 'The agreed delivery date for "SEO Optimization Setup" is tomorrow. Please ensure your work is submitted to escrow.', 
-        time: '5 hours ago', 
-        type: 'warning', 
-        isRead: false, 
-        link: '/seal/789' 
-      },
-      { 
-        id: 4, 
-        title: 'Escrow Funded', 
-        message: '₱15,000.00 has been securely deposited into escrow for "Brand Logo Creation". You may now begin working safely.', 
-        time: 'Yesterday', 
-        type: 'success', 
-        isRead: true, 
-        link: '/seal/101' 
-      },
-      { 
-        id: 5, 
-        title: 'Identity Verification Complete', 
-        message: 'Your valid ID has been successfully verified. Your "Verified Freelancer" badge is now active on your profile.', 
-        time: 'Oct 24, 2025', 
-        type: 'success', 
-        isRead: true, 
-        link: '#' 
-      },
-      { 
-        id: 6, 
-        title: 'New Message', 
-        message: 'Sarah Designs sent you a message regarding the "Dashboard UI" contract terms.', 
-        time: 'Oct 22, 2025', 
-        type: 'info', 
-        isRead: true, 
-        link: '#' 
-      },
-      { 
-        id: 7, 
-        title: 'Platform Update', 
-        message: 'We have updated our Dispute Resolution Policy. Please review the new terms to understand how we protect both parties.', 
-        time: 'Oct 20, 2025', 
-        type: 'info', 
-        isRead: true, 
-        link: '#' 
+      (payload) => {
+        const index = seals.value.findIndex(s => s.id === payload.new.id)
+        if (index !== -1) {
+          seals.value[index] = payload.new
+        } else {
+          seals.value.unshift(payload.new)
+        }
       }
-    ]
-    isLoading.value = false
-  }, 800)
+    )
+    .subscribe()
+}
+
+onMounted(async () => {
+  await authStore.initialize()
+  await fetchSeals()
+  setupRealtimeListener()
 })
 
+onUnmounted(() => {
+  if (sealSubscription) {
+    supabase.removeChannel(sealSubscription)
+  }
+})
+
+const fetchSeals = async () => {
+  try {
+    isLoading.value = true
+    const { data, error } = await supabase
+      .from('Seals')
+      .select(`
+        *,
+        freelancer:freelancer_id(full_name),
+        client:client_id(full_name)
+      `)
+      .or(`freelancer_id.eq.${authStore.user.id},client_id.eq.${authStore.user.id}`)
+      .order('updated_at', { ascending: false })
+
+    if (error) throw error
+    seals.value = data || []
+  } catch (error) {
+    console.error('Error fetching notifications:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Map the raw Seal data into professional notifications
+const notifications = computed(() => {
+  return seals.value.map(seal => {
+    const isFreelancer = authStore.user.id === seal.freelancer_id
+    const partnerName = isFreelancer 
+      ? (seal.client?.full_name || seal.client_name || 'The Client') 
+      : (seal.freelancer?.full_name || 'The Freelancer')
+
+    let title = ''
+    let message = ''
+    let type = 'info'
+
+    // Status-based professional messaging
+    if (seal.status === 'Awaiting funding') {
+      title = 'Contract Confirmed'
+      message = `${partnerName} has confirmed the contract for "${seal.project_name}". Now awaiting funds to be deposited into escrow.`
+      type = 'success'
+    } else if (seal.status === 'In progress') {
+      title = 'Escrow Funded'
+      message = isFreelancer 
+        ? `${partnerName} has transferred the funds to escrow. You may now begin working on "${seal.project_name}".`
+        : `You have successfully funded the escrow for "${seal.project_name}". Your freelancer has been notified to begin work.`
+      type = 'success'
+    } else if (seal.status === 'Pending output review') {
+      title = isFreelancer ? 'Output Submitted' : 'Action Required: Review Work'
+      message = isFreelancer
+        ? `You have submitted your deliverables for "${seal.project_name}". Waiting for ${partnerName} to review and release funds.`
+        : `${partnerName} has submitted their work for "${seal.project_name}". Please review the deliverables and release the escrowed funds.`
+      type = 'action'
+    } else if (seal.status === 'Completed') {
+      title = 'Project Completed'
+      message = `The contract for "${seal.project_name}" has been successfully completed and funds have been released.`
+      type = 'success'
+    }
+
+    // Determine if the notification is "new" based on the last time the user clicked "Mark all as read"
+    const updateTime = new Date(seal.updated_at || seal.created_at).getTime()
+    const isRead = updateTime <= lastReadTimestamp.value
+
+    return {
+      id: seal.id,
+      title,
+      message,
+      time: formatTime(seal.updated_at || seal.created_at),
+      type,
+      isRead,
+      link: `/seal/${seal.id}`
+    }
+  }).filter(n => n.title !== '')
+})
+
+// Unread count is now reactive to the timestamp
 const unreadCount = computed(() => notifications.value.filter(n => !n.isRead).length)
 
 const markAllAsRead = () => {
-  notifications.value.forEach(n => n.isRead = true)
-  console.log('Mock: Database updated! All notifications marked as read.')
+  const now = Date.now()
+  lastReadTimestamp.value = now
+  localStorage.setItem('notifications_read_at', now.toString())
 }
 
-// Dynamically choose SVG icons based on the notification type
+const formatTime = (dateStr: string) => {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5
+  
+  if (diffInHours < 24) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+  return date.toLocaleDateString()
+}
+
 const getIcon = (type: string) => {
   if (type === 'success') return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-  if (type === 'action') return 'M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122'
-  if (type === 'warning') return 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+  if (type === 'action') return 'M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5'
   return 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
 }
 
-// UPDATED: Added dark mode color variants for the icons
 const getIconColor = (type: string) => {
   if (type === 'success') return 'text-green-600 bg-green-100/80 dark:text-green-400 dark:bg-green-900/40'
   if (type === 'action') return 'text-purple-600 bg-purple-100/80 dark:text-purple-400 dark:bg-purple-900/40'
-  if (type === 'warning') return 'text-orange-600 bg-orange-100/80 dark:text-orange-400 dark:bg-orange-900/40'
   return 'text-blue-600 bg-blue-100/80 dark:text-blue-400 dark:bg-blue-900/40'
 }
 </script>
