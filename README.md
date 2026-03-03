@@ -31,11 +31,11 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
   <img src="docs/create_seal.png" alt="Create a Seal" />
 </p>
 
-![Seals_dark](docs/seals_dark.png)
+![Seals](docs/seals.png)
 
 ![Dashboard_dark](docs/dashboard_dark.png)
 <p align="center">
-  <img src="docs/create_seal.png_dark" alt="Create a Seal" />
+  <img src="docs/create_seal_dark.png" alt="Create a Seal_dark" />
 </p>
 
 ![Seals_dark](docs/seals_dark.png)
