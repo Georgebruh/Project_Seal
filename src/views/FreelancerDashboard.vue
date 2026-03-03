@@ -17,13 +17,14 @@ const transactionsData = ref([] as any[])
 // Real Seals Data
 const activeSealsList = ref<any[]>([])
 
+// UPDATED: Added dark mode color variants for proper contrast
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'Pending review': return 'bg-amber-100 text-amber-700'
-    case 'Awaiting funding': return 'bg-blue-100 text-blue-700'
-    case 'In progress': return 'bg-indigo-100 text-indigo-700'
-    case 'Pending output review': return 'bg-purple-100 text-purple-700'
-    default: return 'bg-gray-100 text-gray-700'
+    case 'Pending review': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+    case 'Awaiting funding': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'
+    case 'In progress': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400'
+    case 'Pending output review': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400'
+    default: return 'bg-gray-100 text-gray-700 dark:bg-slate-700/50 dark:text-gray-300'
   }
 }
 
@@ -52,7 +53,7 @@ onMounted(async () => {
         .eq('freelancer_id', user.id)
         .eq('status', 'Completed'),
         
-      // NEW: Fetch the 2 most recently updated seals
+      // Fetch the 2 most recently updated seals
       supabase
         .from('Seals')
         .select('id, project_name, status, updated_at')
@@ -100,7 +101,6 @@ onMounted(async () => {
 
       activeProjectsData.value = {
         total: activeSealsRes.data.length,
-        // .slice(0, 3) ensures it never returns more than 3 items
         nearDeadline: nearDeadlineList.slice(0, 3)
       }
     }
@@ -126,7 +126,6 @@ onMounted(async () => {
       }
     }
 
-    // NEW: Map real recent transactions to the UI
     if (recentTransactionsRes.data) {
       transactionsData.value = recentTransactionsRes.data.map(tx => {
         const date = new Date(tx.updated_at || new Date())
@@ -148,135 +147,135 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-6xl mx-auto font-sans text-slate-800 dark:text-gray-100 transition-colors duration-300">
     
     <div class="mb-8">
-      <h2 class="text-3xl font-bold text-gray-900 tracking-tight">
+      <h2 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">
         Welcome Back, {{ freelancerName }}!
       </h2>
-      <p class="text-gray-600 mt-1 font-medium">Here's what's happening with your projects today.</p>
+      <p class="text-gray-600 dark:text-gray-400 mt-1 font-medium transition-colors">Here's what's happening with your projects today.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       
       <div 
         @click="router.push({ name: 'analytics' })" 
-        class="bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-6 shadow-lg hover:border-seal-teal hover:shadow-2xl hover:bg-white/90 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between h-52 group"
+        class="bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-700/50 p-6 shadow-lg hover:border-seal-teal dark:hover:border-teal-500 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between h-52 group"
       >
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-sm font-medium text-gray-600 mb-1 group-hover:text-gray-800 transition-colors">Total Earnings</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">Total Earnings</p>
             <div class="flex items-center space-x-2">
-              <h3 class="text-2xl font-bold text-gray-900">{{ earningsData.amount }}</h3>
-              <span class="text-xs font-bold text-green-700 bg-green-100/80 px-2 py-1 rounded-full">{{ earningsData.trend }}</span>
+              <h3 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">{{ earningsData.amount }}</h3>
+              <span class="text-xs font-bold text-green-700 dark:text-green-300 bg-green-100/80 dark:bg-green-900/50 px-2 py-1 rounded-full transition-colors">{{ earningsData.trend }}</span>
             </div>
           </div>
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50/80 text-green-600 shadow-sm border border-white/50 group-hover:scale-110 group-hover:bg-green-100 transition-transform duration-300">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-green-50/80 dark:bg-green-900/30 text-green-600 dark:text-green-400 shadow-sm border border-white/50 dark:border-slate-600 group-hover:scale-110 group-hover:bg-green-100 dark:group-hover:bg-green-800/50 transition-all duration-300">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           </div>
         </div>
-        <div class="mt-4 pt-4 border-t border-white/40">
-          <p class="text-xs text-gray-600"><span class="font-bold text-gray-800">{{ earningsData.completedThisMonth }}</span> completed seals this month</p>
+        <div class="mt-4 pt-4 border-t border-white/40 dark:border-slate-700/50">
+          <p class="text-xs text-gray-600 dark:text-gray-400 transition-colors"><span class="font-bold text-gray-800 dark:text-gray-200">{{ earningsData.completedThisMonth }}</span> completed seals this month</p>
         </div>
       </div>
 
       <div 
         @click="router.push({ name: 'my-seals' })" 
-        class="bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-6 shadow-lg hover:border-seal-teal hover:shadow-2xl hover:bg-white/90 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between h-52 group"
+        class="bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-700/50 p-6 shadow-lg hover:border-seal-teal dark:hover:border-teal-500 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between h-52 group"
       >
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-sm font-medium text-gray-600 mb-1 group-hover:text-gray-800 transition-colors">Active Seals</p>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">Active Seals</p>
             <h3 
               @click.stop="router.push({ name: 'analytics' })" 
-              class="text-2xl font-bold text-gray-900 hover:text-seal-teal transition-colors"
+              class="text-2xl font-bold text-gray-900 dark:text-white hover:text-seal-teal dark:hover:text-teal-400 transition-colors"
               title="View Calendar"
             >
               {{ activeProjectsData.total }} Projects
             </h3>
           </div>
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-orange-50/80 text-orange-600 shadow-sm border border-white/50 group-hover:scale-110 group-hover:bg-orange-100 transition-transform duration-300">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-orange-50/80 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 shadow-sm border border-white/50 dark:border-slate-600 group-hover:scale-110 group-hover:bg-orange-100 dark:group-hover:bg-orange-800/50 transition-all duration-300">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           </div>
         </div>
-        <div class="mt-2 pt-3 border-t border-white/40">
-          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Near Deadline</p>
+        <div class="mt-2 pt-3 border-t border-white/40 dark:border-slate-700/50">
+          <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Near Deadline</p>
           <div 
             v-for="seal in activeProjectsData.nearDeadline" 
             :key="seal.id"
             @click.stop="router.push({ name: 'seal-detail', params: { id: seal.id } })"
-            class="flex justify-between items-center text-sm py-0.5 hover:bg-white/50 rounded px-1 -mx-1 transition-colors"
+            class="flex justify-between items-center text-sm py-0.5 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded px-1 -mx-1 transition-colors"
           >
-            <span class="font-medium text-gray-800 truncate mr-2">{{ seal.name }}</span>
-            <span class="text-xs text-red-600 font-semibold whitespace-nowrap">{{ seal.date }}</span>
+            <span class="font-medium text-gray-800 dark:text-gray-200 truncate mr-2">{{ seal.name }}</span>
+            <span class="text-xs text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">{{ seal.date }}</span>
           </div>
         </div>
       </div>
 
       <div 
         @click="router.push({ name: 'history' })" 
-        class="bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 p-6 shadow-lg hover:border-seal-teal hover:shadow-2xl hover:bg-white/90 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between h-52 group"
+        class="bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-700/50 p-6 shadow-lg hover:border-seal-teal dark:hover:border-teal-500 hover:shadow-2xl hover:bg-white/90 dark:hover:bg-slate-800 hover:-translate-y-1.5 hover:scale-[1.02] transition-all duration-300 ease-out cursor-pointer flex flex-col justify-between h-52 group"
       >
         <div class="flex justify-between items-start">
           <div>
-            <p class="text-sm font-medium text-gray-600 mb-1 group-hover:text-gray-800 transition-colors">Transaction History</p>
-            <h3 class="text-2xl font-bold text-gray-900">Recent</h3>
+            <p class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">Transaction History</p>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white transition-colors">Recent</h3>
           </div>
-          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50/80 text-blue-600 shadow-sm border border-white/50 group-hover:scale-110 group-hover:bg-blue-100 transition-transform duration-300">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center bg-blue-50/80 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-sm border border-white/50 dark:border-slate-600 group-hover:scale-110 group-hover:bg-blue-100 dark:group-hover:bg-blue-800/50 transition-all duration-300">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
           </div>
         </div>
-        <div class="mt-2 pt-3 border-t border-white/40">
-          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Latest Alerts</p>
+        <div class="mt-2 pt-3 border-t border-white/40 dark:border-slate-700/50">
+          <p class="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 transition-colors">Latest Alerts</p>
           <div 
             v-for="tx in transactionsData" 
             :key="tx.id"
             @click.stop="router.push(`/seal/${tx.projectId}`)"
-            class="py-0.5 hover:bg-white/50 rounded px-1 -mx-1 transition-colors"
+            class="py-0.5 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded px-1 -mx-1 transition-colors"
           >
-            <p class="text-sm font-medium text-gray-800 truncate">{{ tx.message }}</p>
-            <p class="text-[10px] text-gray-500">{{ tx.time }}</p>
+            <p class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ tx.message }}</p>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ tx.time }}</p>
           </div>
         </div>
       </div>
 
     </div>
 
-    <div class="bg-white/70 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden">
-      <div class="px-6 py-5 border-b border-white/40 flex justify-between items-center">
-        <h3 class="text-lg font-bold text-gray-900">Active Seals</h3>
-        <button @click="router.push({ name: 'my-seals' })" class="text-sm font-semibold text-seal-teal hover:underline">View All</button>
+    <div class="bg-white/70 dark:bg-slate-800/80 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-700/50 shadow-lg overflow-hidden transition-colors duration-300">
+      <div class="px-6 py-5 border-b border-white/40 dark:border-slate-700/50 flex justify-between items-center transition-colors">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white transition-colors">Active Seals</h3>
+        <button @click="router.push({ name: 'my-seals' })" class="text-sm font-semibold text-seal-teal dark:text-teal-400 hover:text-teal-600 dark:hover:text-teal-300 transition-colors hover:underline">View All</button>
       </div>
       
-      <div v-if="isLoading" class="p-6 text-center text-gray-600 font-medium text-sm">
+      <div v-if="isLoading" class="p-6 text-center text-gray-600 dark:text-gray-400 font-medium text-sm transition-colors">
         Loading your active seals...
       </div>
 
       <div v-else-if="activeSealsList.length === 0" class="p-8 text-center">
-        <p class="text-gray-500 text-sm mb-4">You don't have any active seals right now.</p>
-        <button @click="router.push({ name: 'create-seal' })" class="bg-seal-teal text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-600 transition-colors">
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-4 transition-colors">You don't have any active seals right now.</p>
+        <button @click="router.push({ name: 'create-seal' })" class="bg-seal-teal text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-600 dark:hover:bg-teal-500 transition-colors shadow-sm">
           Create a New Seal
         </button>
       </div>
 
-      <div v-else class="divide-y divide-white/40">
-        <div v-for="seal in activeSealsList" :key="seal.id" class="px-6 py-4 flex items-center justify-between hover:bg-white/60 transition-colors cursor-pointer" @click="router.push({ name: 'seal-detail', params: { id: seal.id } })">
+      <div v-else class="divide-y divide-white/40 dark:divide-slate-700/50 transition-colors">
+        <div v-for="seal in activeSealsList" :key="seal.id" class="px-6 py-4 flex items-center justify-between hover:bg-white/60 dark:hover:bg-slate-700/50 transition-colors cursor-pointer" @click="router.push({ name: 'seal-detail', params: { id: seal.id } })">
           
           <div class="w-1/3">
-            <p class="font-bold text-gray-900">{{ seal.title }}</p>
-            <p class="text-xs text-gray-600 mt-0.5 font-medium">{{ seal.subtitle }}</p>
+            <p class="font-bold text-gray-900 dark:text-white transition-colors">{{ seal.title }}</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5 font-medium transition-colors">{{ seal.subtitle }}</p>
           </div>
 
-          <div class="w-1/4 text-sm text-gray-700 font-medium">
+          <div class="w-1/4 text-sm text-gray-700 dark:text-gray-300 font-medium transition-colors">
             {{ seal.date }}
           </div>
 
-          <div class="w-1/4 text-sm font-bold text-gray-900">
+          <div class="w-1/4 text-sm font-bold text-gray-900 dark:text-white transition-colors">
             {{ seal.amount }}
           </div>
 
           <div class="w-1/6 flex justify-end">
-            <span :class="['text-xs font-bold px-3 py-1.5 rounded-full shadow-sm', seal.statusBg]">
+            <span :class="['text-xs font-bold px-3 py-1.5 rounded-full shadow-sm transition-colors', seal.statusBg]">
               {{ seal.status }}
             </span>
           </div>

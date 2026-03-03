@@ -42,48 +42,48 @@ const handleRoleToggle = () => {
 <template>
   <aside 
     :class="[
-      'bg-white flex flex-col transition-all duration-300 ease-in-out overflow-hidden shrink-0 z-20',
-      isCollapsed ? 'w-0 border-r-0 opacity-0' : 'w-64 border-r border-gray-100 shadow-xl shadow-slate-300/50 opacity-100'
+      'bg-white/80 dark:bg-slate-800/80 backdrop-blur-md flex flex-col transition-all duration-300 ease-in-out overflow-hidden shrink-0 z-20',
+      isCollapsed ? 'w-0 border-r-0 opacity-0' : 'w-64 border-r border-white/50 dark:border-slate-700/50 shadow-xl shadow-slate-300/50 dark:shadow-slate-900/50 opacity-100'
     ]"
   >
     <div class="w-64 flex flex-col h-full">
-      <div class="h-16 flex items-center px-6 border-b border-gray-100 shrink-0"></div>
+      <div class="h-16 flex items-center px-6 border-b border-white/50 dark:border-slate-700/50 shrink-0 transition-colors duration-300"></div>
 
       <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Tools</p>
+        <p class="px-2 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-4 transition-colors">Tools</p>
         
         <RouterLink 
           v-for="item in navigation" 
           :key="item.name" 
           :to="{ name: item.routeName }"
-          class="flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-seal-teal transition-colors group"
+          class="flex items-center px-3 py-2.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-white/60 dark:hover:bg-slate-700/50 hover:text-seal-teal dark:hover:text-teal-400 transition-colors group"
         >
-          <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-seal-teal shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-5 h-5 mr-3 text-gray-400 dark:text-gray-500 group-hover:text-seal-teal dark:group-hover:text-teal-400 shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"></path>
           </svg>
           <span class="font-medium text-sm">{{ item.name }}</span>
         </RouterLink>
   
-        <RouterLink v-if="authStore.activeRole === 'freelancer'" :to="{ name: 'create-seal' }" class="w-full mt-4 flex items-center justify-center px-4 py-2 bg-seal-teal text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium shadow-md shadow-slate-300/50">
+        <RouterLink v-if="authStore.activeRole === 'freelancer'" :to="{ name: 'create-seal' }" class="w-full mt-4 flex items-center justify-center px-4 py-2 bg-seal-teal text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition-colors text-sm font-medium shadow-md shadow-slate-300/50 dark:shadow-none">
           <svg class="w-4 h-4 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
            Make New Seal
         </RouterLink>
       </nav>
 
-      <div class="p-4 border-t border-gray-100 bg-gray-50 shrink-0">
-        <div class="bg-white p-3 rounded-lg border border-teal-100 shadow-sm mb-4">
-          <p class="text-xs text-gray-500 font-semibold mb-1 flex items-center">
-            <svg class="w-3 h-3 mr-1 text-yellow-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+      <div class="p-4 border-t border-white/50 dark:border-slate-700/50 bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm shrink-0 transition-colors duration-300">
+        <div class="bg-white/70 dark:bg-slate-800/80 p-3 rounded-lg border border-teal-100 dark:border-slate-600 shadow-sm mb-4 transition-colors duration-300">
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-1 flex items-center transition-colors">
+            <svg class="w-3 h-3 mr-1 text-yellow-500 shrink-0 drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
             Pro Tip
           </p>
-          <p class="text-xs text-gray-600 leading-tight">
+          <p class="text-xs text-gray-600 dark:text-gray-300 leading-tight transition-colors">
             {{ authStore.activeRole === 'freelancer' ? 'Clear communication prevents scope creep!' : 'Reviewing submissions within 24hrs builds trust.' }}
           </p>
         </div>
 
         <button 
           @click="handleRoleToggle" 
-          class="w-full py-2 px-4 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-white hover:shadow-sm transition-all"
+          class="w-full py-2 px-4 border border-white/60 dark:border-slate-600 bg-white/50 dark:bg-slate-700/50 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-white/80 dark:hover:bg-slate-600 hover:shadow-sm transition-all"
         >
           Log-in as {{ authStore.activeRole === 'freelancer' ? 'Client' : 'Freelancer' }}
         </button>
