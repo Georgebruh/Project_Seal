@@ -31,6 +31,7 @@ Project Seal provides a dedicated ecosystem for both sides of the freelance equa
 <p align="center">
   <img src="docs/create_seal.png" alt="Create a Seal" />
 </p>
+
 ![Seals](docs/seals.png)
 
 ## 🛠️ How We Built It
