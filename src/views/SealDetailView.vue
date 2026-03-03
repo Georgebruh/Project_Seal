@@ -245,8 +245,13 @@ const updateSealStatus = async (newStatus: string, additionalUpdates: any = {}) 
   }
 }
 
-const clientAcceptContract = async () => {
-  await updateSealStatus('Awaiting funding', { client_id: authStore.user.id })
+const clientAcceptContract = () => {
+  showConfirm(
+    'Accept Contract Terms', 
+    'Please make sure you have read and fully understood the contract details, scope of work, payment terms, and deadlines. Once confirmed, certain contract fields can no longer be edited.', 
+    'Yes, I Agree',
+    async () => await updateSealStatus('Awaiting funding', { client_id: authStore.user.id })
+  )
 }
 
 const proceedToPayment = () => {
