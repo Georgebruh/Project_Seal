@@ -332,7 +332,7 @@ const handleDeleteClick = async () => {
   }
 }
 
-const openSeal = (sealId: string) => router.push(`/dashboard/seal/${sealId}`)
+const openSeal = (sealId: string) => router.push(`/seal/${sealId}`)
 </script>
 
 <template>
